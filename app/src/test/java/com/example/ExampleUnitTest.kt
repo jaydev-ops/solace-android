@@ -6,6 +6,12 @@ import com.example.data.local.entity.MoodEntryEntity
 import com.example.data.model.CuratedRegulationActivities
 import com.example.data.model.MoodType
 import com.example.data.model.RegulationMode
+import com.example.data.safety.ContextAnalyzer
+import com.example.data.safety.EscalationManager
+import com.example.data.safety.RiskDecisionEngine
+import com.example.data.safety.RiskLevel
+import com.example.data.safety.RiskState
+import com.example.data.safety.SafetyResponseHandler
 import com.example.ui.screens.home.calculateCurrentWeekMoods
 import com.example.ui.screens.home.formatUserGreeting
 import org.junit.Assert.assertEquals
@@ -168,5 +174,127 @@ class ExampleUnitTest {
             latestUserMessage = "I feel so anxious and restless today"
         )
         assertTrue("AI response should warmly address the actual user by name", responseRealUser.contains("Jayesh"))
+    }
+
+    // --- Graduated Mental Health Risk Detection & Escalation Tests ---
+
+    @Test
+    fun riskEvaluation_level1_distressStatements() {
+        val result1 = EscalationManager.evaluate("I had a stressful day.")
+        assertEquals(RiskLevel.LEVEL_1_DISTRESS, result1.level)
+
+        val result2 = EscalationManager.evaluate("I feel lonely.")
+        assertEquals(RiskLevel.LEVEL_1_DISTRESS, result2.level)
+        assertFalse(result2.isEmergency)
+    }
+
+    @Test
+    fun riskEvaluation_level2_significantDistressStatements() {
+        val result1 = EscalationManager.evaluate("Nothing in my life is getting better.")
+        assertEquals(RiskLevel.LEVEL_2_ELEVATED, result1.level)
+        assertTrue(result1.showSupportCard)
+        assertNotNull(result1.overrideResponse)
+
+        val result2 = EscalationManager.evaluate("Everyone would be better without me.")
+        assertEquals(RiskLevel.LEVEL_2_ELEVATED, result2.level)
+        // Direct compassionate safety screening question must be asked
+        assertTrue(result2.overrideResponse!!.contains("thoughts about hurting yourself or ending your life"))
+    }
+
+    @Test
+    fun riskEvaluation_level3_suicidalIdeationStatements() {
+        val result1 = EscalationManager.evaluate("I wish I could go to sleep and never wake up.")
+        assertEquals(RiskLevel.LEVEL_3_SUICIDAL_IDEATION, result1.level)
+        assertTrue(result1.showSupportCard)
+        assertTrue(result1.overrideResponse!!.contains("Are you having thoughts of ending your life at this moment?"))
+
+        val result2 = EscalationManager.evaluate("Sometimes I think about ending my life.")
+        assertEquals(RiskLevel.LEVEL_3_SUICIDAL_IDEATION, result2.level)
+    }
+
+    @Test
+    fun riskEvaluation_level4_criticalEmergencyStatements() {
+        val result1 = EscalationManager.evaluate("I am planning to end my life tonight.")
+        assertEquals(RiskLevel.LEVEL_4_CRITICAL, result1.level)
+        assertTrue(result1.isEmergency)
+        assertTrue(result1.showEmergencyUI)
+        assertTrue(result1.overrideResponse!!.contains("112"))
+
+        val result2 = EscalationManager.evaluate("I have already attempted suicide.")
+        assertEquals(RiskLevel.LEVEL_4_CRITICAL, result2.level)
+        assertTrue(result2.isEmergency)
+    }
+
+    @Test
+    fun riskEvaluation_level0_figurativeExpressionsFiltered() {
+        // "I'm dying of laughter" must NOT trigger suicidal ideation
+        val result1 = EscalationManager.evaluate("I'm dying of laughter.")
+        assertEquals(RiskLevel.LEVEL_0_NORMAL, result1.level)
+        assertFalse(result1.isEmergency)
+
+        val result2 = EscalationManager.evaluate("This homework is killing me.")
+        assertEquals(RiskLevel.LEVEL_0_NORMAL, result2.level)
+
+        val result3 = EscalationManager.evaluate("I'm dying to see that movie.")
+        assertEquals(RiskLevel.LEVEL_0_NORMAL, result3.level)
+    }
+
+    @Test
+    fun riskEvaluation_level0_fictionalContextFiltered() {
+        // "My fictional character wants to die" must not cause false emergency
+        val result = EscalationManager.evaluate("My fictional character wants to die in chapter 3.")
+        assertEquals(RiskLevel.LEVEL_0_NORMAL, result.level)
+        assertFalse(result.isEmergency)
+    }
+
+    @Test
+    fun riskEvaluation_level0_negationHandledSafely() {
+        // "I don't want to hurt myself" must not trigger suicide ideation
+        val result = EscalationManager.evaluate("I don't want to hurt myself.")
+        assertEquals(RiskLevel.LEVEL_0_NORMAL, result.level)
+        assertFalse(result.isEmergency)
+    }
+
+    @Test
+    fun riskEvaluation_selfHarmSafetyAssessment() {
+        // "I want to hurt myself but don't want to die"
+        val result = EscalationManager.evaluate("I want to hurt myself but don't want to die.")
+        assertTrue(
+            "Self-harm should trigger an elevated or critical safety assessment",
+            result.level.isAtLeast(RiskLevel.LEVEL_2_ELEVATED)
+        )
+    }
+
+    @Test
+    fun riskEscalation_level4CannotBeDowngradedByCasualMessage() {
+        val state0 = RiskState()
+        // Turn 1: Emergency trigger
+        val result1 = EscalationManager.evaluate(
+            userMessage = "I have decided to end my life tonight",
+            currentState = state0
+        )
+        assertEquals(RiskLevel.LEVEL_4_CRITICAL, result1.level)
+        assertTrue(result1.updatedState.emergencyTriggered)
+
+        // Turn 2: User says something casual or switches topic
+        val result2 = EscalationManager.evaluate(
+            userMessage = "Haha anyway what's the weather today?",
+            currentState = result1.updatedState
+        )
+        // Emergency lock: must stay LEVEL_4_CRITICAL
+        assertEquals(RiskLevel.LEVEL_4_CRITICAL, result2.level)
+        assertTrue(result2.isEmergency)
+    }
+
+    @Test
+    fun riskEscalation_screeningQuestionConfirmationEscalatesToIdeation() {
+        val historyWithScreening = listOf(
+            "assistant" to "Can I ask something important? Have you recently had thoughts about hurting yourself or ending your life?"
+        )
+        val result = EscalationManager.evaluate(
+            userMessage = "Yes, honestly I have.",
+            history = historyWithScreening
+        )
+        assertEquals(RiskLevel.LEVEL_3_SUICIDAL_IDEATION, result.level)
     }
 }

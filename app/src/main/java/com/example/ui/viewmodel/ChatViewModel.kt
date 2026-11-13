@@ -13,6 +13,9 @@ import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.UserPreferencesEntity
 import com.example.data.repository.FirestoreRepository
 import com.example.data.repository.SolaceRepository
+import com.example.data.safety.EscalationManager
+import com.example.data.safety.RiskLevel
+import com.example.data.safety.RiskState
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,6 +91,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _isTranscribingAudio = MutableStateFlow(false)
     val isTranscribingAudio: StateFlow<Boolean> = _isTranscribingAudio.asStateFlow()
 
+    // Graduated Mental Health Risk State
+    private val _riskState = MutableStateFlow(RiskState())
+    val riskState: StateFlow<RiskState> = _riskState.asStateFlow()
+
     fun selectModel(model: GeminiChatModel) {
         _selectedModel.value = model
     }
@@ -144,6 +151,51 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 role to it.content
             }
 
+            // 3. Deterministic Mental Health Risk Evaluation
+            val safetyResult = EscalationManager.evaluate(
+                userMessage = trimmed,
+                history = history,
+                currentState = _riskState.value,
+                userName = prefs.userName.trim()
+            )
+            _riskState.value = safetyResult.updatedState
+
+            // If safety module provides an override response (Levels 2, 3, 4)
+            if (safetyResult.overrideResponse != null) {
+                val safetyMsg = ChatMessageEntity(
+                    senderRole = "assistant",
+                    content = safetyResult.overrideResponse,
+                    regulationMode = currentRole.id,
+                    contextAnchor = "Safety Assessment • ${safetyResult.level.title}",
+                    timestamp = System.currentTimeMillis()
+                )
+
+                if (saveMemory) {
+                    repository.saveChatMessage(
+                        senderRole = "assistant",
+                        content = safetyResult.overrideResponse,
+                        regulationMode = currentRole.id,
+                        contextAnchor = "Safety Assessment • ${safetyResult.level.title}"
+                    )
+                } else {
+                    _ephemeralMessages.value = _ephemeralMessages.value + safetyMsg
+                }
+
+                if (saveMemory && auth?.currentUser != null) {
+                    try {
+                        firestoreRepository.saveChatMessage(
+                            senderRole = "model",
+                            content = safetyResult.overrideResponse,
+                            modelName = currentModel.modelId,
+                            systemRole = currentRole.id
+                        )
+                    } catch (_: Exception) {}
+                }
+                _uiState.value = ChatUiState.Idle
+                return@launch
+            }
+
+            // 4. Normal AI Conversation (Level 0 / Level 1)
             _uiState.value = ChatUiState.Loading
             val accumulatedResponse = StringBuilder()
 
@@ -241,6 +293,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.clearChatHistory()
             _ephemeralMessages.value = emptyList()
+            _riskState.value = RiskState()
             auth?.currentUser?.uid?.let { uid ->
                 try {
                     firestoreRepository.clearChatMessages(uid)

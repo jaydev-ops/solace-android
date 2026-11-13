@@ -69,7 +69,10 @@ import androidx.compose.ui.unit.sp
 import com.example.data.ai.ChatbotRole
 import com.example.data.ai.GeminiChatModel
 import com.example.data.local.entity.ChatMessageEntity
+import com.example.data.safety.RiskLevel
 import com.example.ui.components.AudioTranscriptionModal
+import com.example.ui.components.EmergencySupportCard
+import com.example.ui.components.SafetyScreeningSupportBanner
 import com.example.ui.theme.ButteryYellow
 import com.example.ui.theme.CreamWhite
 import com.example.ui.theme.LocalMoodColors
@@ -121,6 +124,8 @@ fun ChatScreen(
 
     var inputText by remember { mutableStateOf("") }
     var showAudioModal by remember { mutableStateOf(false) }
+    var showEmergencySheet by remember { mutableStateOf(false) }
+    val riskState by viewModel.riskState.collectAsState()
     val listState = rememberLazyListState()
     val moodColors = LocalMoodColors.current
     val isImeVisible = WindowInsets.isImeVisible
@@ -370,6 +375,24 @@ fun ChatScreen(
                     ChatMessageBubble(message = message)
                 }
 
+                // Level 4 Emergency Support Card / Level 2-3 Screening Banner
+                if (riskState.currentLevel == RiskLevel.LEVEL_4_CRITICAL || riskState.emergencyTriggered) {
+                    item {
+                        EmergencySupportCard(
+                            country = "IN",
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                } else if (riskState.currentLevel == RiskLevel.LEVEL_3_SUICIDAL_IDEATION || riskState.currentLevel == RiskLevel.LEVEL_2_ELEVATED) {
+                    item {
+                        SafetyScreeningSupportBanner(
+                            riskLevel = riskState.currentLevel,
+                            onShowResources = { showEmergencySheet = true },
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
+                    }
+                }
+
                 // Streaming partial response
                 if (uiState is ChatUiState.Streaming) {
                     val partial = (uiState as ChatUiState.Streaming).partialResponse
@@ -524,6 +547,15 @@ fun ChatScreen(
             },
             onDismiss = { showAudioModal = false }
         )
+    }
+
+    if (showEmergencySheet) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showEmergencySheet = false }) {
+            EmergencySupportCard(
+                country = "IN",
+                onContactTrustedPerson = null
+            )
+        }
     }
 }
 

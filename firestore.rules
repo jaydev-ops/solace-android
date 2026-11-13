@@ -69,6 +69,17 @@ service cloud.firestore {
              (!('source' in data) || (data.source is string && data.source.size() <= 64));
     }
 
+    function isValidRegulationSession(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.activityId is string && data.activityId.size() <= 64 &&
+             data.activityTitle is string && data.activityTitle.size() <= 128 &&
+             data.category is string && data.category.size() <= 64 &&
+             data.durationSeconds is int &&
+             data.rating is int &&
+             (!('note' in data) || (data.note is string && data.note.size() <= 5000));
+    }
+
     // User Profile
     match /users/{userId} {
       allow get: if isOwner(userId);
@@ -152,6 +163,23 @@ service cloud.firestore {
         allow update: if isOwner(userId) &&
                          incoming().userId == existing().userId &&
                          isValidAudioTranscription(incoming());
+
+        allow delete: if isOwner(userId);
+      }
+
+      // Subcollection: Regulation Sessions
+      match /regulation_sessions/{sessionId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidRegulationSession(incoming());
+
+        allow update: if isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         isValidRegulationSession(incoming());
 
         allow delete: if isOwner(userId);
       }

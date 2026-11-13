@@ -63,3 +63,16 @@ data class FirestoreAudioTranscription(
     val source: String = "microphone",
     @ServerTimestamp val createdAt: Timestamp? = null
 )
+
+@IgnoreExtraProperties
+data class FirestoreRegulationSession(
+    @DocumentId val id: String = "",
+    val userId: String = "",
+    val activityId: String = "",
+    val activityTitle: String = "",
+    val category: String = "",
+    val durationSeconds: Long = 0L,
+    val rating: Long = 5L,
+    val note: String = "",
+    @ServerTimestamp val createdAt: Timestamp? = null
+)

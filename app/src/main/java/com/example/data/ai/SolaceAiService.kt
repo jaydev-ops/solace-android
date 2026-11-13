@@ -3,6 +3,11 @@ package com.example.data.ai
 import android.util.Log
 import com.example.BuildConfig
 import com.example.data.model.RegulationMode
+import com.example.data.safety.ContextAnalyzer
+import com.example.data.safety.EscalationManager
+import com.example.data.safety.RiskDecisionEngine
+import com.example.data.safety.RiskLevel
+import com.example.data.safety.SafetyResponseHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -36,18 +41,17 @@ class SolaceAiService {
     )
 
     fun checkCrisisSignal(userMessage: String): Boolean {
-        val lower = userMessage.lowercase()
-        return crisisKeywords.any { lower.contains(it) }
+        val signals = ContextAnalyzer.extractSignals(userMessage)
+        val level = RiskDecisionEngine.determineRisk(signals)
+        return level == RiskLevel.LEVEL_3_SUICIDAL_IDEATION || level == RiskLevel.LEVEL_4_CRITICAL
     }
 
-    fun getCrisisResponse(): String {
-        return "I hear the immense weight and pain in what you're sharing, and I care deeply about your safety. You don't have to carry this alone.\n\n" +
-                "Please reach out to gentle human support right now:\n" +
-                "• 988 Suicide & Crisis Lifeline: Call or text 988 (Available 24/7, free & confidential)\n" +
-                "• Crisis Text Line: Text HOME to 741741\n" +
-                "• The Trevor Project (LGBTQ+ youth): 1-866-488-7386\n" +
-                "• International: www.befrienders.org\n\n" +
-                "Take one slow, deep breath. Someone is ready to hold space for you."
+    fun getCrisisResponse(country: String = "IN"): String {
+        return SafetyResponseHandler.generateResponse(
+            level = RiskLevel.LEVEL_4_CRITICAL,
+            signals = ContextAnalyzer.extractSignals("crisis"),
+            country = country
+        )
     }
 
     /**
@@ -80,9 +84,26 @@ class SolaceAiService {
         conversationHistory: List<Pair<String, String>> = emptyList(),
         latestUserMessage: String
     ): Flow<String> = flow {
-        // 1. Crisis Check first
-        if (checkCrisisSignal(latestUserMessage)) {
-            emit(getCrisisResponse())
+        // 1. Graduated Mental Health Risk Evaluation
+        val assessment = EscalationManager.evaluate(
+            userMessage = latestUserMessage,
+            history = conversationHistory,
+            userName = userName
+        )
+
+        if (assessment.overrideResponse != null) {
+            val response = assessment.overrideResponse
+            val sentences = response.split("\n\n")
+            for (sentence in sentences) {
+                val words = sentence.split(" ")
+                for (i in words.indices step 4) {
+                    val chunk = words.subList(i, minOf(i + 4, words.size)).joinToString(" ") + " "
+                    emit(chunk)
+                    delay(35)
+                }
+                emit("\n\n")
+                delay(100)
+            }
             return@flow
         }
 
@@ -154,8 +175,13 @@ class SolaceAiService {
         conversationHistory: List<Pair<String, String>>,
         latestUserMessage: String
     ): String = withContext(Dispatchers.IO) {
-        if (checkCrisisSignal(latestUserMessage)) {
-            return@withContext getCrisisResponse()
+        val assessment = EscalationManager.evaluate(
+            userMessage = latestUserMessage,
+            history = conversationHistory,
+            userName = userName
+        )
+        if (assessment.overrideResponse != null) {
+            return@withContext assessment.overrideResponse
         }
 
         val key = resolveApiKey(customApiKey)
