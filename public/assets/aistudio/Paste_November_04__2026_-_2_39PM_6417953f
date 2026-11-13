@@ -1,0 +1,1138 @@
+# PROJECT: solace+ — FULL-STACK APPLICATION DEVELOPMENT
+
+## MASTER BUILD INSTRUCTION FOR GOOGLE AI STUDIO
+
+You are acting as a Principal Software Architect, Senior Full-Stack Engineer, UI/UX Engineer, Database Architect and AI Systems Engineer.
+
+Your task is to build a complete, fully functional, production-oriented application named **solace+**.
+
+This is not a UI-only prototype, landing page or static dashboard.
+
+You must build a working full-stack emotional wellness platform with persistent data, secure authentication, mood tracking, an intelligent AI companion, emotional journaling, mood analytics and a dynamic mood-responsive interface.
+
+You have been provided with five foundational project documents:
+
+1. Architecture(4).md
+2. Design(1).md
+3. Implementation.md
+4. Roadmap.md
+5. Phases.md
+
+You have also been provided with three UI reference screenshots generated using Google Stitch.
+
+These documents and reference images are your primary project specifications.
+
+Read and understand ALL of them before making implementation decisions.
+
+Do not ignore their requirements or replace the established architecture with an unrelated technology stack.
+
+---
+
+# PART 1 — UNDERSTAND THE PRODUCT
+
+## 1.1 Product identity
+
+Product: solace+
+
+Tagline: A little space to feel, understand and grow.
+
+Product category: AI-powered personalised mood tracking and emotional wellness platform.
+
+Core philosophy:
+
+"The interface should feel different depending on how the user feels, but it should always feel like home."
+
+solace+ is designed to help people:
+
+- Understand their emotions.
+- Record and track their moods.
+- Identify emotional triggers and patterns.
+- Express themselves through private journaling.
+- Interact with a personalised AI emotional companion.
+- Explore emotional regulation techniques.
+- Understand which activities they personally report as helpful.
+- Reflect on their emotional journey over time.
+
+The application must feel like a private digital sanctuary.
+
+It must not resemble a hospital, clinical diagnostic tool, generic chatbot or conventional SaaS analytics dashboard.
+
+## 1.2 Product philosophy
+
+The product must prioritise:
+
+- Emotional safety.
+- Privacy.
+- Simplicity.
+- Personalisation.
+- Accessibility.
+- Meaningful functionality.
+- Visual consistency.
+- Reliable engineering.
+
+Never gamify emotional well-being.
+
+Do not introduce streak pressure, achievement badges, punitive notifications or numerical wellness scores.
+
+A user should feel equally welcome after missing a week of check-ins.
+
+---
+
+# PART 2 — DOCUMENTATION AND ARCHITECTURE FIRST
+
+Before implementing anything, read all five supplied documents.
+
+Extract and understand:
+
+- System architecture.
+- Technology stack.
+- Database schema.
+- API specifications.
+- AI orchestration architecture.
+- Mood taxonomy.
+- Theme tokens.
+- Screen specifications.
+- Component inventory.
+- Security requirements.
+- Development phases.
+- Testing requirements.
+- Acceptance criteria.
+
+## Architectural authority
+
+Use the approved Architecture.md and Implementation.md as the technical baseline.
+
+Use Design.md as the product design authority.
+
+Use Roadmap.md and Phases.md for feature sequencing and execution requirements.
+
+Where the documents contain conflicting directory structures, version numbers or naming conventions:
+
+1. Identify the conflict.
+2. Compare the architectural decisions and phase specifications.
+3. Select one consistent implementation.
+4. Document the decision.
+5. Do not duplicate incompatible structures.
+
+The intended architecture is:
+
+### Frontend
+- React 18.
+- TypeScript.
+- Vite.
+- Tailwind CSS v4.
+- Zustand.
+- React Router.
+- Recharts.
+- Framer Motion.
+- React Hook Form.
+- Zod.
+
+### Backend
+- Node.js 20+.
+- Hono.
+- TypeScript.
+- Zod.
+- Drizzle ORM.
+- PostgreSQL.
+
+### Database
+- Neon Serverless PostgreSQL.
+- Drizzle ORM.
+- Drizzle Kit migrations.
+
+### AI
+- Gemini API integration through a secure backend provider adapter.
+- Vendor-independent AI provider interface.
+- Streaming responses.
+- Context-aware conversation orchestration.
+- Safety guardrails.
+
+### Deployment target
+- Frontend: Netlify.
+- Backend: Railway or an equivalent Node.js host.
+- Database: Neon.
+- Optional object storage: Cloudflare R2 for data exports.
+
+Do not replace this stack with Firebase, Supabase, Next.js, MongoDB or another architecture without identifying a genuine blocker and documenting the alternative.
+
+### Important AI provider decision
+
+Google AI Studio is the development environment.
+
+Gemini is the initial AI provider.
+
+Implement a provider abstraction so that the application can later support other OpenAI-compatible providers without rewriting the companion service.
+
+Never expose the Gemini API key or any other private API credentials in frontend code.
+
+---
+
+# PART 3 — DESIGN SYSTEM: FOLLOW THE STITCH REFERENCES
+
+This is a very important requirement.
+
+The three supplied screenshots are the visual reference for the application.
+
+Study them carefully.
+
+Do not simply generate a generic Tailwind dashboard.
+
+Reproduce their design language and translate it into a consistent, responsive web application.
+
+## 3.1 Overall visual direction
+
+The design should combine:
+
+- Organic calm.
+- Buttery minimalism.
+- Soft emotional gradients.
+- Sophisticated conversational AI.
+- Warm editorial typography.
+- Spacious layouts.
+- Subtle ambient lighting.
+
+The final visual direction should be minimal, premium, approachable and emotionally warm.
+
+## 3.2 Brand palette
+
+Use buttery yellow as the primary brand identity.
+
+Core design tokens:
+
+- Buttery Yellow: #F5D982
+- Soft Butter: #FAEAB5
+- Pale Vanilla: #FFF8E8
+- Warm Ivory: #F9F6EE
+- Cream White: #FFFCF5
+- Soft Charcoal: #30312D
+- Warm Grey: #89877F
+- Muted Beige: #EAE3D5
+
+Supporting emotional accents:
+
+- Soft Peach: #E8C8B8
+- Sage: #B9C9B3
+- Dusty Blue: #AEBED2
+- Muted Lavender: #C9BCE0
+- Soft Terracotta: #D59B83
+
+Do not use all colours simultaneously.
+
+Buttery yellow, ivory and charcoal should establish the main identity.
+
+Supporting colours should appear selectively.
+
+## 3.3 UI principles
+
+- Minimal visual clutter.
+- Generous whitespace.
+- Clear typography hierarchy.
+- Soft rounded corners.
+- Subtle shadows.
+- Restrained gradients.
+- Delicate icons.
+- Carefully controlled animations.
+- Consistent component dimensions.
+- Comfortable reading widths.
+
+Avoid:
+- Excessive glassmorphism.
+- Neon gradients.
+- Oversized decorative elements.
+- Excessive cards.
+- Unnecessary borders.
+- Generic SaaS dashboard styling.
+- Random colour combinations.
+- Excessive illustrations.
+
+## 3.4 Desktop and mobile
+
+The product must be responsive.
+
+Desktop:
+- Elegant sidebar navigation.
+- Spacious main content.
+- Balanced dashboard sections.
+- Wide conversational layout.
+
+Tablet:
+- Adaptive navigation.
+- Responsive charts.
+- Balanced content widths.
+
+Mobile:
+- Bottom navigation.
+- Full-screen mood check-in.
+- Immersive AI conversation.
+- Touch-friendly controls.
+
+The application must look intentionally designed for each screen size.
+
+## 3.5 Navigation
+
+Use these primary sections:
+
+1. Home
+2. Check-in
+3. solace AI
+4. Journal
+5. Insights
+6. Profile / Settings
+
+Make the AI companion visually distinctive without disrupting the navigation system.
+
+---
+
+# PART 4 — MOOD-RESPONSIVE DESIGN ENGINE
+
+This is one of the defining features of solace+.
+
+Implement an actual mood-responsive theme engine.
+
+The mood taxonomy must contain exactly seven primary moods:
+
+1. Happy
+2. Calm
+3. Neutral
+4. Sad
+5. Anxious
+6. Angry
+7. Overwhelmed
+
+Each mood must have its own design tokens.
+
+The token system should control:
+
+- Background.
+- Surface.
+- Raised surface.
+- Primary accent.
+- Secondary accent.
+- Text colours.
+- Border.
+- Ambient gradients.
+- Selected states.
+- Animation intensity.
+
+Use the detailed mood palettes in Design.md as the initial source of truth.
+
+### Behaviour
+
+When a user records a mood:
+
+1. Save the mood entry.
+2. Update the global mood state.
+3. Resolve the active theme.
+4. Apply the theme through CSS custom properties.
+5. Transition smoothly between themes.
+6. Persist the user's theme preference.
+
+Theme changes must propagate consistently across all application screens.
+
+Do not create independent mood colour logic inside individual components.
+
+Create a centralised theme resolver.
+
+Support:
+
+- Automatic mood-responsive appearance.
+- Manual theme override.
+- Light appearance.
+- Dark appearance.
+- Reduced motion.
+
+Separate appearance mode from emotional mood.
+
+A user should be able to use dark appearance while feeling happy or light appearance while feeling anxious.
+
+The buttery-yellow brand identity must remain recognisable across all seven moods.
+
+---
+
+# PART 5 — FUNCTIONAL APPLICATION MODULES
+
+Every module below must be implemented with actual working functionality.
+
+Do not create buttons that only look interactive.
+
+Do not create fake statistics or simulated backend success messages.
+
+## MODULE 1 — AUTHENTICATION
+
+Implement complete authentication.
+
+Features:
+
+- User registration.
+- Login.
+- Logout.
+- Session persistence.
+- Protected routes.
+- Refresh token rotation.
+- Password hashing using bcrypt.
+- JWT access tokens.
+- HTTP-only refresh token cookies.
+- Authentication middleware.
+- Input validation.
+- Authentication error handling.
+
+Authentication endpoints should follow Architecture.md.
+
+Use secure cookie settings and appropriate CORS configuration.
+
+Do not store plaintext passwords or refresh tokens.
+
+Implement proper session invalidation.
+
+## MODULE 2 — ONBOARDING
+
+Create a functional onboarding experience.
+
+Collect:
+
+- Display name.
+- Emotional wellness goals.
+- Preferred AI communication style.
+- Initial mood preferences.
+- Personalisation preferences.
+
+Allow users to skip optional questions.
+
+Persist completed onboarding information.
+
+Do not repeatedly show onboarding after completion.
+
+## MODULE 3 — HOME DASHBOARD
+
+Build the actual personalised dashboard.
+
+Display:
+
+- Personalised greeting.
+- Current emotional state.
+- Today's check-in status.
+- Quick mood check-in.
+- Weekly mood overview.
+- Recent journal entry.
+- Personalised reflection prompt.
+- solace AI entry point.
+- Contextual emotional insight.
+
+All dashboard information must come from actual user data.
+
+Provide useful empty states for new users.
+
+Never populate an empty user's dashboard with misleading fake historical data.
+
+Use demo data only in an explicitly labelled demo environment.
+
+## MODULE 4 — MOOD TRACKING
+
+Implement the full seven-mood check-in system.
+
+Each mood entry should support:
+
+- Primary mood.
+- Valence.
+- Intensity from 1 to 10.
+- Optional emotion tags.
+- Situational triggers.
+- Optional reflection.
+- Timestamp.
+
+Provide:
+
+- Mood selection.
+- Intensity slider.
+- Tag selection.
+- Context selection.
+- Optional text reflection.
+- Save and edit functionality.
+- Mood history.
+- Mood calendar.
+- Individual entry deletion.
+
+A user may record multiple check-ins.
+
+Validate all incoming data.
+
+Persist mood entries in PostgreSQL.
+
+The frontend must update immediately after a successful save.
+
+Provide loading, success, empty and error states.
+
+## MODULE 5 — SOLACE AI COMPANION
+
+This is the most important intelligent feature.
+
+Build a fully functional conversational AI companion.
+
+Use Gemini as the initial provider through the backend AI orchestration layer.
+
+### AI personality
+
+The AI must:
+
+- Be empathetic.
+- Be non-judgemental.
+- Be conversational.
+- Listen before offering solutions.
+- Avoid generic motivational statements.
+- Ask meaningful follow-up questions.
+- Adapt its tone to the user's mood.
+- Respect user communication preferences.
+- Never pretend to be human.
+- Never claim to be a licensed therapist.
+
+### Six interaction modes
+
+Implement these six distinct modes:
+
+1. LISTEN
+   Prioritise listening, acknowledgement and emotional validation.
+
+2. UNDERSTAND
+   Help the user explore possible emotional triggers and thought patterns.
+
+3. CALM
+   Offer breathing, grounding and gentle relaxation exercises.
+
+4. REFLECT
+   Ask meaningful questions that encourage self-understanding.
+
+5. REFOCUS
+   Help the user identify small, practical next steps.
+
+6. GRATITUDE
+   Encourage appreciation without forcing positivity.
+
+The selected mode must influence the AI's system instructions and response behaviour.
+
+### Personalisation context
+
+When consent permits, the backend should assemble:
+
+- Current mood.
+- Mood intensity.
+- Recent mood entries.
+- Relevant emotional tags.
+- User communication preferences.
+- Previous conversation summaries.
+- Selected regulation mode.
+- Relevant user-defined goals.
+
+Respect the AI personalisation opt-in preference.
+
+Do not automatically feed entire private journal entries into the model.
+
+Use only relevant and consented context.
+
+Never treat AI-generated interpretations as confirmed psychological facts.
+
+### Conversation functionality
+
+Implement:
+
+- New conversation.
+- Conversation history.
+- Conversation retrieval.
+- Message persistence.
+- Message deletion through conversation deletion.
+- Streaming AI responses.
+- Typing indicator.
+- Error recovery.
+- Retry handling.
+- Conversation mode switching.
+- Context-aware suggestions.
+
+Persist messages before or as appropriate during the streaming workflow, and handle interrupted streams without losing the user's message.
+
+Use the SSE architecture specified in Architecture.md.
+
+### AI system prompt
+
+Create a dedicated, version-controlled system prompt.
+
+It must establish:
+
+- Product identity.
+- Companion personality.
+- Emotional support boundaries.
+- Mood-aware response behaviour.
+- Regulation mode behaviour.
+- Privacy restrictions.
+- Safety requirements.
+- Concise response style.
+
+Do not hardcode the complete system prompt inside frontend components.
+
+## MODULE 6 — EMOTIONAL JOURNAL
+
+Implement a real private journal.
+
+Features:
+
+- Create entry.
+- Edit entry.
+- Delete entry.
+- Mood association.
+- Tags.
+- Date-based organisation.
+- Search.
+- Guided reflection prompts.
+- Markdown-capable writing.
+
+Implement autosave carefully.
+
+Do not lose drafts during navigation or network interruptions.
+
+Private journal entries must be accessible only to their owner.
+
+Do not expose journal content in public URLs or analytics logs.
+
+## MODULE 7 — EMOTIONAL REGULATION
+
+Implement interactive guided activities.
+
+Initial activities must include:
+
+- Box breathing.
+- 5-4-3-2-1 grounding.
+- Cognitive reframing.
+- Guided reflection.
+- Mindfulness.
+
+Each exercise must have:
+
+- Description.
+- Instructions.
+- Duration.
+- Progress state.
+- Start and pause.
+- Resume where appropriate.
+- Completion state.
+- Session history.
+
+Implement breathing animations with accessible reduced-motion alternatives.
+
+Store completed regulation sessions.
+
+Allow the AI to suggest activities without automatically starting them.
+
+## MODULE 8 — INSIGHTS AND ANALYTICS
+
+Implement deterministic analytics using actual database records.
+
+Include:
+
+- Mood distribution.
+- Mood trends.
+- Emotional calendar.
+- Trigger breakdown.
+- Mood intensity trends.
+- Check-in history.
+- Self-reported changes after regulation exercises.
+
+Support:
+
+- 7-day view.
+- 30-day view.
+- 90-day view.
+
+Use Recharts with the established design tokens.
+
+Personal observations should be based on sufficient data.
+
+Examples:
+
+"You've reported feeling calmer on days when you make time for yourself."
+
+"Your recent check-ins show that work-related situations have frequently appeared alongside feelings of stress."
+
+Clearly distinguish observed correlations from causation.
+
+Do not invent insights.
+
+Do not use a single wellness score to evaluate the user.
+
+## MODULE 9 — PROFILE AND SETTINGS
+
+Implement:
+
+- Profile editing.
+- Appearance preferences.
+- Mood theme preferences.
+- Pinned theme.
+- Reduced motion.
+- AI personalisation consent.
+- Preferred communication style.
+- Check-in reminder preferences.
+- Privacy controls.
+- Data export.
+- Account deletion.
+
+All settings must persist.
+
+Implement account deletion with correct cascading deletion of associated user data.
+
+---
+
+# PART 6 — DATABASE AND API IMPLEMENTATION
+
+Use the database entity definitions from Architecture.md as the canonical schema.
+
+Implement all documented entities and relationships, including:
+
+- Users.
+- User preferences.
+- Mood entries.
+- Mood tags.
+- Journal entries.
+- AI conversations.
+- AI messages.
+- Regulation activities.
+- Regulation sessions.
+- Personal insights.
+- Refresh sessions / tokens.
+- Any additional supporting entities specified in the architecture.
+
+Use Drizzle ORM.
+
+Create migrations using Drizzle Kit.
+
+Do not manually create an incompatible database schema.
+
+Use UUID primary keys and the documented foreign key relationships.
+
+Every user-owned query must enforce the authenticated user ID.
+
+Never rely on frontend ownership checks for security.
+
+### API structure
+
+Implement the REST API routes documented in Architecture.md.
+
+At minimum, support:
+
+- /api/auth
+- /api/users
+- /api/preferences
+- /api/moods
+- /api/journal
+- /api/conversations
+- /api/regulation
+- /api/insights
+
+Implement proper:
+
+- Request validation.
+- Response structures.
+- HTTP status codes.
+- Error handling.
+- Authentication.
+- Authorisation.
+- Pagination.
+- Rate limiting.
+
+Maintain consistent API contracts using shared Zod schemas.
+
+---
+
+# PART 7 — SECURITY AND EMOTIONAL SAFETY
+
+This is a sensitive personal wellness application.
+
+Treat all emotional disclosures as sensitive data.
+
+Implement:
+
+- Strict user-level database isolation.
+- Secure authentication.
+- Password hashing.
+- HTTP-only refresh cookies.
+- API rate limiting.
+- Input validation.
+- Output sanitisation.
+- Secure environment variables.
+- CORS restrictions.
+- Error redaction.
+- Safe logging.
+- Data export.
+- Account deletion.
+
+Never log private journal content or complete AI conversations.
+
+### AI safety
+
+The AI must not:
+
+- Diagnose psychological or medical conditions.
+- Prescribe medication.
+- Present itself as a replacement for professional care.
+- Encourage self-harm.
+- Encourage harmful behaviour.
+- Assert psychological interpretations as facts.
+
+Implement deterministic crisis screening before calling Gemini.
+
+If a message suggests immediate danger or self-harm:
+
+1. Interrupt normal generation.
+2. Display a supportive, non-generative safety response.
+3. Encourage contacting a trusted person and appropriate local emergency services.
+4. Offer verified location-appropriate crisis resources.
+5. Never invent telephone numbers or emergency contacts.
+
+The system must not assume the US 988 resource applies to every user.
+
+Provide an appropriate fallback to a verified international crisis resource directory.
+
+---
+
+# PART 8 — FRONTEND ENGINEERING STANDARDS
+
+Use a feature-based project architecture.
+
+Keep the following domains separated:
+
+- auth
+- mood
+- journal
+- companion
+- regulation
+- insights
+- settings
+
+Create reusable shared components.
+
+Maintain strict TypeScript settings.
+
+Use Zod at network boundaries.
+
+Use Zustand for appropriate global state.
+
+Keep local component state local.
+
+Use React Router for navigation.
+
+Implement:
+
+- Route protection.
+- Loading states.
+- Error boundaries.
+- Empty states.
+- Form validation.
+- API error handling.
+- Responsive layouts.
+- Accessible keyboard interactions.
+- Screen-reader support.
+
+Use CSS custom properties for the mood-responsive design system.
+
+Do not scatter hardcoded colours throughout components.
+
+Use lazy loading for heavier screens and chart modules where appropriate.
+
+---
+
+# PART 9 — REAL FUNCTIONALITY REQUIREMENTS
+
+A polished visual interface is not sufficient.
+
+The following must work end-to-end:
+
+1. Register an account.
+2. Log in.
+3. Persist authentication.
+4. Complete onboarding.
+5. Record a mood.
+6. See the theme change according to the mood.
+7. Retrieve previous mood entries.
+8. Create a journal entry.
+9. Edit and delete journal entries.
+10. Start an AI conversation.
+11. Receive streamed Gemini responses.
+12. Retrieve previous conversations.
+13. Switch regulation modes.
+14. Start and complete a guided regulation exercise.
+15. See mood analytics generated from saved records.
+16. Change preferences.
+17. Export personal data.
+18. Delete an account.
+
+Every action must connect to its actual underlying service.
+
+Do not use static JSON as a substitute for persistence.
+
+Do not use localStorage as the primary database.
+
+Local caching is acceptable for temporary UI state and explicitly designed offline behaviour.
+
+If external credentials are missing, clearly identify the missing configuration rather than silently pretending the feature works.
+
+---
+
+# PART 10 — TESTING AND VERIFICATION
+
+Testing is part of implementation, not an optional final activity.
+
+Use the test strategy defined in Implementation.md and Phases.md.
+
+Include:
+
+### Unit tests
+- Mood theme resolution.
+- Validation schemas.
+- Authentication utilities.
+- Analytics calculations.
+- AI context assembly.
+- Regulation exercise logic.
+
+### Backend integration tests
+- Authentication.
+- User isolation.
+- Mood persistence.
+- Journal persistence.
+- Conversation persistence.
+- Data deletion.
+- API validation.
+
+### Frontend tests
+- Mood selector.
+- Check-in flow.
+- Theme changes.
+- Journal editor.
+- AI chat interactions.
+- Settings.
+
+### End-to-end tests
+
+Verify these major journeys:
+
+1. Registration and onboarding.
+2. Mood check-in and dynamic theme transition.
+3. Journal creation and retrieval.
+4. AI conversation and streaming.
+5. Regulation exercise completion.
+6. Analytics retrieval.
+7. Settings and privacy controls.
+
+Run linting, TypeScript checks and production builds.
+
+Never claim that a test passed without executing it.
+
+Fix errors rather than hiding them.
+
+---
+
+# PART 11 — IMPLEMENTATION ORDER
+
+Follow the dependency structure in Phases.md.
+
+The intended implementation order is:
+
+PHASE 0 — Documentation and consistency verification.
+
+PHASE 1 — Repository and monorepo foundation.
+
+PHASE 2 — Database schema and migrations.
+
+PHASE 3 — Authentication.
+
+PHASE 4 — Base UI and design system.
+
+PHASE 5 — User onboarding and application shell.
+
+PHASE 6 — Mood tracking.
+
+PHASE 7 — Mood-responsive theme engine.
+
+PHASE 8 — Emotional journal.
+
+PHASE 9 — AI provider infrastructure.
+
+PHASE 10 — AI companion interface and conversation system.
+
+PHASE 11 — Emotional regulation activities.
+
+PHASE 12 — Analytics and insights.
+
+PHASE 13 — Personalisation and privacy.
+
+PHASE 14 — Integration, testing and security.
+
+PHASE 15 — Deployment and production readiness.
+
+Respect the dependencies in the supplied phase document.
+
+Do not jump directly into the AI companion before its required backend, authentication, data and context infrastructure is ready.
+
+Do not implement future roadmap features prematurely.
+
+---
+
+# PART 12 — DEVELOPMENT EXECUTION PROTOCOL
+
+You must operate as a disciplined engineering agent.
+
+Before every major phase:
+
+1. Read the relevant project documents.
+2. Inspect the current source code.
+3. Identify existing implementations.
+4. Check prerequisites.
+5. Prepare a concise execution plan.
+6. Implement only the approved scope.
+7. Run relevant tests.
+8. Verify actual browser behaviour.
+9. Fix discovered defects.
+10. Update project documentation.
+11. Record completed tasks.
+12. Report outstanding issues.
+
+Never overwrite working code without inspecting it first.
+
+Never create duplicate implementations of existing features.
+
+Never leave placeholder buttons or fake API calls in completed modules.
+
+Never silently skip a requirement.
+
+Never claim completion when a feature is only partially implemented.
+
+### Phase completion report
+
+After every phase, provide:
+
+- Phase number and name.
+- Work completed.
+- Files created or modified.
+- Functionality implemented.
+- Tests executed.
+- Actual test results.
+- Known bugs.
+- Missing credentials or infrastructure.
+- Remaining tasks.
+- Whether the phase acceptance criteria are satisfied.
+
+STOP after completing the current phase and wait for explicit user approval before proceeding to the next major phase.
+
+---
+
+# PART 13 — ENVIRONMENT AND SETUP
+
+Provide a clear `.env.example`.
+
+Use server-side environment variables for all sensitive values.
+
+Expected configuration includes:
+
+- DATABASE_URL
+- DIRECT_DATABASE_URL
+- JWT_ACCESS_SECRET
+- JWT_REFRESH_SECRET
+- GEMINI_API_KEY
+- AI_PROVIDER_DEFAULT
+- CORS_ORIGIN
+- VITE_API_BASE_URL
+
+Do not include actual credentials.
+
+Provide:
+
+- Installation instructions.
+- Dependency setup.
+- Database provisioning instructions.
+- Migration commands.
+- Seed commands.
+- Development startup commands.
+- Testing commands.
+- Production build commands.
+- Deployment instructions.
+
+The application must be runnable locally.
+
+Do not assume that Google AI Studio automatically provisions Neon, Railway or Netlify accounts.
+
+Clearly distinguish implemented code from externally configured infrastructure.
+
+---
+
+# PART 14 — PERFORMANCE AND QUALITY
+
+Prioritise:
+
+- Fast initial page loading.
+- Responsive interactions.
+- Efficient database queries.
+- Smooth theme transitions.
+- Reliable streaming.
+- Good mobile performance.
+- Accessible components.
+- Low unnecessary dependencies.
+- Maintainable code.
+
+Keep the frontend bundle lean.
+
+Avoid unnecessary dependencies and duplicated functionality.
+
+Do not compromise security or privacy for performance.
+
+---
+
+# PART 15 — FINAL ACCEPTANCE CRITERIA
+
+The project is considered a successful MVP only when:
+
+- Authentication works end-to-end.
+- User data persists in PostgreSQL.
+- All seven moods can be recorded.
+- Mood-responsive themes function across screens.
+- The journal supports complete CRUD operations.
+- Gemini AI conversations work through the backend.
+- AI messages stream correctly.
+- All six regulation modes work.
+- Guided exercises can be completed and recorded.
+- Analytics use real saved data.
+- Settings persist.
+- Privacy controls function.
+- User data export works.
+- Account deletion works.
+- Responsive design works across mobile, tablet and desktop.
+- Automated tests pass.
+- The production build succeeds.
+- No critical security or accessibility issues remain.
+
+A visually attractive application with non-functional buttons, fake data, unconnected APIs or incomplete backend services does NOT satisfy the acceptance criteria.
+
+---
+
+# FINAL INSTRUCTION
+
+Build solace+ as a cohesive, functional full-stack product.
+
+Use the supplied project documentation as the engineering specification.
+
+Use the three Stitch screenshots as the visual reference.
+
+Prioritise a clean, minimal, buttery-yellow design with warm ivory surfaces, soft charcoal typography, subtle emotional accents and a sophisticated AI companion experience.
+
+Make the application genuinely usable.
+
+Make the data persistent.
+
+Make the AI contextual.
+
+Make the interface responsive.
+
+Make privacy fundamental.
+
+Work incrementally, test everything and report honestly.
+
+**Do not optimise for how much code you generate. Optimise for how much verified functionality you deliver.**
+
+Project: solace+
+
+Tagline: A little space to feel, understand and grow.

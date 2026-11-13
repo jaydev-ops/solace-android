@@ -1,0 +1,6 @@
+{
+  "name": "solace+",
+  "description": "A gentle sanctuary for every feeling. Personalised emotional reflection, mood tracking, solace AI companion, and regulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

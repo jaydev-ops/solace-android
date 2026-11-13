@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and sanctuary preferences",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The authenticated user UID" },
+        "displayName": { "type": "string", "description": "Sanctuary greeting name" },
+        "email": { "type": "string", "description": "User Google email address" },
+        "pinnedTheme": { "type": "string", "description": "Optional pinned sanctuary theme" },
+        "isDarkMode": { "type": "boolean", "description": "Night sanctuary dark theme toggle" },
+        "aiPersonalisationConsent": { "type": "boolean", "description": "Consent to allow AI to reference journal and check-ins" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp via serverTimestamp()" }
+      },
+      "required": ["userId", "displayName", "createdAt"]
+    },
+    "MoodEntry": {
+      "title": "MoodEntry",
+      "description": "Logged emotional resonance check-in",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique mood check-in identifier" },
+        "userId": { "type": "string", "description": "Author UID" },
+        "mood": { "type": "string", "description": "Emotional resonance name" },
+        "valence": { "type": "integer", "description": "1 to 10 positivity valence" },
+        "intensity": { "type": "integer", "description": "1 to 10 sensation intensity" },
+        "tags": { "type": "string", "description": "Comma-separated coloring tags" },
+        "note": { "type": "string", "description": "Private unburdening reflection" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp via serverTimestamp()" }
+      },
+      "required": ["id", "userId", "mood", "valence", "intensity", "createdAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "Private emotional sanctuary journal reflection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique journal document identifier" },
+        "userId": { "type": "string", "description": "Author UID" },
+        "title": { "type": "string", "description": "Reflection title" },
+        "content": { "type": "string", "description": "Reflection unhurried body content" },
+        "associatedMood": { "type": "string", "description": "Optional connected emotional state" },
+        "tags": { "type": "string", "description": "Comma-separated tags" },
+        "wordCount": { "type": "integer", "description": "Computed word count" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp via serverTimestamp()" }
+      },
+      "required": ["id", "userId", "title", "content", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Multi-turn Gemini chat conversation message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique message identifier" },
+        "userId": { "type": "string", "description": "Owner UID" },
+        "senderRole": { "type": "string", "description": "Message author: user or model" },
+        "content": { "type": "string", "description": "Message text content" },
+        "modelName": { "type": "string", "description": "Gemini model used (gemini-3.8-flash, gemini-4-argon, etc.)" },
+        "systemRole": { "type": "string", "description": "Active role prompt identifier" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp()" }
+      },
+      "required": ["id", "userId", "senderRole", "content", "createdAt"]
+    },
+    "AudioTranscription": {
+      "title": "AudioTranscription",
+      "description": "Microphone audio transcription record produced by Gemini",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique audio entry identifier" },
+        "userId": { "type": "string", "description": "Author UID" },
+        "transcription": { "type": "string", "description": "Transcribed spoken text" },
+        "durationSeconds": { "type": "integer", "description": "Recorded audio duration in seconds" },
+        "source": { "type": "string", "description": "Microphone audio recording" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp()" }
+      },
+      "required": ["id", "userId", "transcription", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile and sanctuary preferences"
+    },
+    "/users/{userId}/mood_entries/{entryId}": {
+      "schema": { "$ref": "#/entities/MoodEntry" },
+      "description": "User's private mood check-ins"
+    },
+    "/users/{userId}/journal_entries/{journalId}": {
+      "schema": { "$ref": "#/entities/JournalEntry" },
+      "description": "User's private journal entries"
+    },
+    "/users/{userId}/chat_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "User's multi-turn conversational chat thread"
+    },
+    "/users/{userId}/audio_transcriptions/{transcriptionId}": {
+      "schema": { "$ref": "#/entities/AudioTranscription" },
+      "description": "User's transcribed microphone audio records"
+    }
+  }
+}

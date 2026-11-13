@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">solace+</string>
+    <!-- Placeholder: replaced automatically when google-services.json is present -->
+    <string name="default_web_client_id">PLACEHOLDER_WEB_CLIENT_ID</string>
+</resources>
