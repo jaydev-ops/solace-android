@@ -277,6 +277,19 @@ class SolaceAiService {
         val moodInfo = if (currentMood != null) "Current recorded mood: $currentMood (Intensity: ${moodIntensity ?: 5}/10)." else ""
         val journalInfo = if (!recentJournalSnippet.isNullOrBlank()) "Recent reflection: \"$recentJournalSnippet\"." else ""
 
+        val cleanName = userName.trim()
+        val hasValidName = cleanName.isNotBlank() &&
+            !cleanName.equals("Sanctuary", ignoreCase = true) &&
+            !cleanName.equals("User", ignoreCase = true) &&
+            !cleanName.equals("Guest", ignoreCase = true) &&
+            !cleanName.equals("Sanctuary Guest", ignoreCase = true)
+
+        val userAddressing = if (hasValidName) {
+            "You are conversing with $cleanName. Address them warmly by their name sparingly."
+        } else {
+            "Address the user warmly in the second person. Do not call the user 'Sanctuary', 'User', or make up names."
+        }
+
         val modeGuidance = when (regulationMode) {
             RegulationMode.LISTEN -> "MODE: LISTEN. Provide pure unconditional holding space. Reflect what you hear with deep compassion. Never offer unsolicited solutions or hurry the user."
             RegulationMode.UNDERSTAND -> "MODE: UNDERSTAND. Help the user gently unlayer what is happening beneath the surface with warm, curious questions."
@@ -288,7 +301,7 @@ class SolaceAiService {
 
         return """
             You are solace, a private, serene emotional sanctuary companion.
-            You are conversing with $userName.
+            $userAddressing
             $moodInfo
             $journalInfo
 
@@ -311,6 +324,14 @@ class SolaceAiService {
         history: List<Pair<String, String>>,
         latestUserMessage: String
     ): String {
+        val cleanName = userName.trim()
+        val hasValidName = cleanName.isNotBlank() &&
+                !cleanName.equals("Sanctuary", ignoreCase = true) &&
+                !cleanName.equals("User", ignoreCase = true) &&
+                !cleanName.equals("Guest", ignoreCase = true) &&
+                !cleanName.equals("Sanctuary Guest", ignoreCase = true)
+        val nameComma = if (hasValidName) ", $cleanName" else ""
+
         val lower = latestUserMessage.lowercase()
         val wordCount = latestUserMessage.split("\\s+".toRegex()).size
         val isShort = wordCount < 6
@@ -335,9 +356,9 @@ class SolaceAiService {
         // 1. ANXIETY & RESTLESSNESS
         if (isAnxious) {
             val responses = listOf(
-                "I feel how fast everything is moving inside you right now, $userName. When anxiety enters, our thoughts race to keep us safe, but your body needs quiet reassurance first.\n\nNotice where your feet are planted on the floor right now. Can you drop your shoulders half an inch down, unclench your teeth, and let your next breath sigh out softly? You are completely safe in this moment.",
-                "It's okay that your nervous system is on high alert, $userName. You don't have to fight this fluttery feeling or force yourself to calm down instantly.\n\nTake one slow breath in through your nose for 4 counts... and gently release it through parted lips for 6 counts. What part of your body feels this tension most vividly right now?",
-                "That tight, restless energy is so exhausting to hold alone, $userName. Remember: feelings are waves, and waves always crest and break.\n\nLet's keep the sanctuary very quiet right now. You don't need to make any big decisions today. Just be right here, breathing beside me."
+                "I feel how fast everything is moving inside you right now$nameComma. When anxiety enters, our thoughts race to keep us safe, but your body needs quiet reassurance first.\n\nNotice where your feet are planted on the floor right now. Can you drop your shoulders half an inch down, unclench your teeth, and let your next breath sigh out softly? You are completely safe in this moment.",
+                "It's okay that your nervous system is on high alert$nameComma. You don't have to fight this fluttery feeling or force yourself to calm down instantly.\n\nTake one slow breath in through your nose for 4 counts... and gently release it through parted lips for 6 counts. What part of your body feels this tension most vividly right now?",
+                "That tight, restless energy is so exhausting to hold alone$nameComma. Remember: feelings are waves, and waves always crest and break.\n\nLet's keep the sanctuary very quiet right now. You don't need to make any big decisions today. Just be right here, breathing beside me."
             )
             return responses.random()
         }
@@ -345,9 +366,9 @@ class SolaceAiService {
         // 2. OVERWHELM & PARALYSIS
         if (isOverwhelmed) {
             val responses = listOf(
-                "When everything lands at once, $userName, our minds freeze because they try to solve twenty problems simultaneously. You don't need to carry tomorrow or next week right now.\n\nLet's shrink the universe down to just the chair or bed you're resting on. If we could put 90% of those tasks into a locked drawer for the next hour, what is the single kindest thing your body needs?",
-                "I hear the weight of all those spinning plates, $userName. Feeling overwhelmed isn't a sign that you are weak—it's a sign that you've been strong for too long without enough room to rest.\n\nYou have permission to pause. Right here, nothing is due, nobody is waiting, and there is nothing you need to prove.",
-                "It makes total sense that you feel frozen, $userName. When demands exceed our current energy, paralysis is simply our nervous system saying: 'Please pause.'\n\nLet's honor that pause. Take a long, unhurried exhale. What is one small expectation you can let go of for the rest of today?"
+                "When everything lands at once$nameComma, our minds freeze because they try to solve twenty problems simultaneously. You don't need to carry tomorrow or next week right now.\n\nLet's shrink the universe down to just the chair or bed you're resting on. If we could put 90% of those tasks into a locked drawer for the next hour, what is the single kindest thing your body needs?",
+                "I hear the weight of all those spinning plates$nameComma. Feeling overwhelmed isn't a sign that you are weak—it's a sign that you've been strong for too long without enough room to rest.\n\nYou have permission to pause. Right here, nothing is due, nobody is waiting, and there is nothing you need to prove.",
+                "It makes total sense that you feel frozen$nameComma. When demands exceed our current energy, paralysis is simply our nervous system saying: 'Please pause.'\n\nLet's honor that pause. Take a long, unhurried exhale. What is one small expectation you can let go of for the rest of today?"
             )
             return responses.random()
         }
@@ -355,9 +376,9 @@ class SolaceAiService {
         // 3. EXHAUSTION & TIREDNESS
         if (isTired) {
             val responses = listOf(
-                "Bone-deep tiredness is a holy signal, $userName. It's your spirit asking for quiet restoration, not more productivity.\n\nYou don't have to untangle anything right now. Close your eyes for ten seconds, let your hands rest limp in your lap, and allow yourself to simply exist without performing.",
-                "I hear how drained your battery is, $userName. Sometimes showing up to take a breath is a victory in itself. Give yourself credit for carrying everything you've shouldered so far today.",
-                "When you are this tired, $userName, your mind will naturally paint the world in gray tones. Don't believe every pessimistic thought your brain whispers when your body is fatigued. Rest first, reflect later."
+                "Bone-deep tiredness is a holy signal$nameComma. It's your spirit asking for quiet restoration, not more productivity.\n\nYou don't have to untangle anything right now. Close your eyes for ten seconds, let your hands rest limp in your lap, and allow yourself to simply exist without performing.",
+                "I hear how drained your battery is$nameComma. Sometimes showing up to take a breath is a victory in itself. Give yourself credit for carrying everything you've shouldered so far today.",
+                "When you are this tired$nameComma, your mind will naturally paint the world in gray tones. Don't believe every pessimistic thought your brain whispers when your body is fatigued. Rest first, reflect later."
             )
             return responses.random()
         }
@@ -365,9 +386,9 @@ class SolaceAiService {
         // 4. SADNESS & LONELINESS
         if (isSad) {
             val responses = listOf(
-                "I'm sitting right beside you in this quiet ache, $userName. Tears and heavy hearts are not failures; they are proof that something mattered deeply to you.\n\nYou don't have to put on a brave face here. I am holding unhurried space for whatever feelings need to be felt.",
+                "I'm sitting right beside you in this quiet ache$nameComma. Tears and heavy hearts are not failures; they are proof that something mattered deeply to you.\n\nYou don't have to put on a brave face here. I am holding unhurried space for whatever feelings need to be felt.",
                 "Loneliness and sadness have a hollow weight that feels impossible to explain to the busy world outside. But here in your sanctuary, you are seen and welcomed exactly as you are.\n\nWrap your arms around yourself or hold a warm cup. What does this tender feeling wish someone would understand?",
-                "There is nothing you need to fix about how you feel today, $userName. Softness is its own form of resilience. Take all the time you need—I'm not going anywhere."
+                "There is nothing you need to fix about how you feel today$nameComma. Softness is its own form of resilience. Take all the time you need—I'm not going anywhere."
             )
             return responses.random()
         }
@@ -375,9 +396,9 @@ class SolaceAiService {
         // 5. FRUSTRATION & ANGER
         if (isAngry) {
             val responses = listOf(
-                "Your frustration makes total sense, $userName. Anger is often the fierce guardian of a boundary that was crossed or an injustice that stung.\n\nYou have every right to feel this heat. You don't have to swallow it down or pretend it's fine. What part of this feels most unfair or dismissive to you?",
-                "I hear the fire in that, $userName. When things are unfair or people let us down, it's exhausting to hold in. Let it breathe here in the sanctuary—you don't have to apologize for feeling upset.",
-                "Anger is energy asking to be acknowledged, $userName. Before doing anything with it, take one long, fierce exhale. What is this feeling trying to protect in you?"
+                "Your frustration makes total sense$nameComma. Anger is often the fierce guardian of a boundary that was crossed or an injustice that stung.\n\nYou have every right to feel this heat. You don't have to swallow it down or pretend it's fine. What part of this feels most unfair or dismissive to you?",
+                "I hear the fire in that$nameComma. When things are unfair or people let us down, it's exhausting to hold in. Let it breathe here in the sanctuary—you don't have to apologize for feeling upset.",
+                "Anger is energy asking to be acknowledged$nameComma. Before doing anything with it, take one long, fierce exhale. What is this feeling trying to protect in you?"
             )
             return responses.random()
         }
@@ -385,9 +406,9 @@ class SolaceAiService {
         // 6. JOY & GRATITUDE
         if (isHappy) {
             val responses = listOf(
-                "What a gift to witness this lightness in your spirit, $userName! When moments of ease and warmth arrive, letting them soak into your chest helps build a gentle emotional reservoir.\n\nWhat brought this glimmer of peace or joy to your heart today?",
-                "I love hearing that softness in your words, $userName. Savor it without waiting for the other shoe to drop. You deserve every ounce of this warmth.",
-                "Let that feeling expand through your breath, $userName. Notice how your body feels right now when it's open and unburdened—anchor this feeling as your sanctuary baseline."
+                "What a gift to witness this lightness in your spirit${if (hasValidName) ", $cleanName!" else "!"} When moments of ease and warmth arrive, letting them soak into your chest helps build a gentle emotional reservoir.\n\nWhat brought this glimmer of peace or joy to your heart today?",
+                "I love hearing that softness in your words$nameComma. Savor it without waiting for the other shoe to drop. You deserve every ounce of this warmth.",
+                "Let that feeling expand through your breath$nameComma. Notice how your body feels right now when it's open and unburdened—anchor this feeling as your sanctuary baseline."
             )
             return responses.random()
         }
@@ -395,9 +416,9 @@ class SolaceAiService {
         // 7. SELF-CRITICISM & GUILT
         if (isSelfCritical) {
             val responses = listOf(
-                "Please pause and hear me gently, $userName: you are speaking to yourself with a harshness you would never use on someone you love.\n\nYou are a human being navigating a complex, demanding life with limited energy. What would happen if you offered yourself the same forgiveness you so readily extend to others?",
-                "Mistakes and imperfect days do not diminish your worth, $userName. Self-criticism is often an old survival habit trying to keep us in control, but kindness is what actually heals.\n\nTake a slow breath. Can we hold what happened with gentle curiosity instead of shame?",
-                "I see you striving so hard, $userName. Give the harsh inner judge a seat on the bench. In this sanctuary, you are accepted completely, flaws and all."
+                "Please pause and hear me gently${if (hasValidName) ", $cleanName:" else ":"} you are speaking to yourself with a harshness you would never use on someone you love.\n\nYou are a human being navigating a complex, demanding life with limited energy. What would happen if you offered yourself the same forgiveness you so readily extend to others?",
+                "Mistakes and imperfect days do not diminish your worth$nameComma. Self-criticism is often an old survival habit trying to keep us in control, but kindness is what actually heals.\n\nTake a slow breath. Can we hold what happened with gentle curiosity instead of shame?",
+                "I see you striving so hard$nameComma. Give the harsh inner judge a seat on the bench. In this sanctuary, you are accepted completely, flaws and all."
             )
             return responses.random()
         }
@@ -406,50 +427,50 @@ class SolaceAiService {
         return when (regulationMode) {
             RegulationMode.LISTEN -> {
                 val pool = listOf(
-                    "Thank you for entrusting me with that, $userName. It takes vulnerability to put these quiet thoughts into words. I am listening with deep attention—what else feels close to the surface for you?",
-                    "I hear you, $userName. There is no rush to wrap this in a neat bow or find a lesson right now. If your heart could speak without any filter, what would it say next?",
-                    "Sitting with you in this space, $userName. You don't have to perform or keep things light here. What feels heaviest about what you just shared?",
-                    "I'm here holding this space with you, $userName. Even when feelings feel tangled, bringing them to light is the first gentle step. Take your time."
+                    "Thank you for entrusting me with that$nameComma. It takes vulnerability to put these quiet thoughts into words. I am listening with deep attention—what else feels close to the surface for you?",
+                    "I hear you$nameComma. There is no rush to wrap this in a neat bow or find a lesson right now. If your heart could speak without any filter, what would it say next?",
+                    "Sitting with you in this space$nameComma. You don't have to perform or keep things light here. What feels heaviest about what you just shared?",
+                    "I'm here holding this space with you$nameComma. Even when feelings feel tangled, bringing them to light is the first gentle step. Take your time."
                 )
                 pool[turnCount % pool.size]
             }
             RegulationMode.CALM -> {
                 val pool = listOf(
-                    "Let's pause right here together, $userName. Notice your breath without trying to force it.\n\nSoftly drop your shoulders away from your ears. Unclench your jaw. Feel the gentle support of the seat underneath you. Can you take one long, smooth exhale through your lips?",
-                    "Before untangling those thoughts, let's bring your body home first, $userName.\n\nFeel the air entering your nostrils, cool and quiet, and leaving warm. Inhale for 4... hold for 4... exhale for 6. Let that calm ripple through your chest.",
-                    "Your mind is trying so hard to carry everything, $userName. Let's give it a 60-second recess. Soften your gaze, uncurl your fingers, and feel the steady rhythm of your heartbeat."
+                    "Let's pause right here together$nameComma. Notice your breath without trying to force it.\n\nSoftly drop your shoulders away from your ears. Unclench your jaw. Feel the gentle support of the seat underneath you. Can you take one long, smooth exhale through your lips?",
+                    "Before untangling those thoughts, let's bring your body home first$nameComma.\n\nFeel the air entering your nostrils, cool and quiet, and leaving warm. Inhale for 4... hold for 4... exhale for 6. Let that calm ripple through your chest.",
+                    "Your mind is trying so hard to carry everything$nameComma. Let's give it a 60-second recess. Soften your gaze, uncurl your fingers, and feel the steady rhythm of your heartbeat."
                 )
                 pool[turnCount % pool.size]
             }
             RegulationMode.UNDERSTAND -> {
                 val pool = listOf(
-                    "It sounds like there are multiple subtle layers to what you're experiencing, $userName. When did you first notice this sensation or thought pattern beginning to build today?",
-                    "That is so insightful of you to notice, $userName. Often beneath this feeling is an unvoiced boundary or a quiet longing. What do you feel you needed most in that moment?",
-                    "Looking at this with compassionate curiosity: if this feeling had a voice of its own, what message is it trying to deliver to your attention, $userName?"
+                    "It sounds like there are multiple subtle layers to what you're experiencing$nameComma. When did you first notice this sensation or thought pattern beginning to build today?",
+                    "That is so insightful of you to notice$nameComma. Often beneath this feeling is an unvoiced boundary or a quiet longing. What do you feel you needed most in that moment?",
+                    "Looking at this with compassionate curiosity: if this feeling had a voice of its own, what message is it trying to deliver to your attention$nameComma?"
                 )
                 pool[turnCount % pool.size]
             }
             RegulationMode.REFLECT -> {
                 val pool = listOf(
-                    "That reflects real self-awareness, $userName. Even uncomfortable emotions are often protective guides. Looking back at this from a place of peace, what gentle wisdom is emerging for you?",
-                    "Notice how much resilience you've already shown, $userName. What would a compassionate mentor or loving friend reflect back to you about this situation?",
-                    "Everything in life moves in seasons and waves, $userName. What can you release control over right now, trusting that clarity will arrive in its own time?"
+                    "That reflects real self-awareness$nameComma. Even uncomfortable emotions are often protective guides. Looking back at this from a place of peace, what gentle wisdom is emerging for you?",
+                    "Notice how much resilience you've already shown$nameComma. What would a compassionate mentor or loving friend reflect back to you about this situation?",
+                    "Everything in life moves in seasons and waves$nameComma. What can you release control over right now, trusting that clarity will arrive in its own time?"
                 )
                 pool[turnCount % pool.size]
             }
             RegulationMode.REFOCUS -> {
                 val pool = listOf(
-                    "When everything feels large and loud, let's shrink the horizon down to the next ten minutes, $userName. What is one tiny, zero-pressure micro-step you could take right now that requires no perfection?",
-                    "You don't need to cross the whole mountain today, $userName. Just the next single step. Is it drinking a glass of cold water, stepping outside for fresh air, or closing your eyes for five minutes?",
-                    "Let's protect your energy, $userName. Of everything on your mind, what is the ONE thing that genuinely belongs to today, while letting the rest rest until tomorrow?"
+                    "When everything feels large and loud, let's shrink the horizon down to the next ten minutes$nameComma. What is one tiny, zero-pressure micro-step you could take right now that requires no perfection?",
+                    "You don't need to cross the whole mountain today$nameComma. Just the next single step. Is it drinking a glass of cold water, stepping outside for fresh air, or closing your eyes for five minutes?",
+                    "Let's protect your energy$nameComma. Of everything on your mind, what is the ONE thing that genuinely belongs to today, while letting the rest rest until tomorrow?"
                 )
                 pool[turnCount % pool.size]
             }
             RegulationMode.GRATITUDE -> {
                 val pool = listOf(
-                    "Even in the middle of a heavy week, small mercies quiet our nervous system, $userName. What is one small sensory comfort you enjoyed recently—the warmth of tea, soft light, or a quiet breath?",
-                    "That touches on something very pure, $userName. Let that small relief settle into your chest for three full breaths. Warmth and gratitude are quiet anchors.",
-                    "Noticing beauty amidst imperfection is a profound strength, $userName. What is something you appreciate about your own courage or kindness today?"
+                    "Even in the middle of a heavy week, small mercies quiet our nervous system$nameComma. What is one small sensory comfort you enjoyed recently—the warmth of tea, soft light, or a quiet breath?",
+                    "That touches on something very pure$nameComma. Let that small relief settle into your chest for three full breaths. Warmth and gratitude are quiet anchors.",
+                    "Noticing beauty amidst imperfection is a profound strength$nameComma. What is something you appreciate about your own courage or kindness today?"
                 )
                 pool[turnCount % pool.size]
             }

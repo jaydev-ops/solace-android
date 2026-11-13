@@ -6,8 +6,11 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +42,7 @@ import com.example.ui.theme.SolaceTheme
 import com.example.ui.viewmodel.ChatViewModel
 import com.example.ui.viewmodel.SolaceViewModel
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SolaceApp(
     viewModel: SolaceViewModel,
@@ -82,7 +86,8 @@ fun SolaceApp(
             activeMood = activeMoodTheme,
             modifier = modifier.fillMaxSize()
         ) {
-            val isBottomNavVisible = when (currentScreen) {
+            val isImeVisible = WindowInsets.isImeVisible
+            val isBottomNavVisible = !isImeVisible && when (currentScreen) {
                 Screen.Home,
                 Screen.CheckIn,
                 Screen.Companion,
@@ -95,6 +100,7 @@ fun SolaceApp(
 
             Scaffold(
                 containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 bottomBar = {
                     AnimatedVisibility(
                         visible = isBottomNavVisible,
@@ -110,10 +116,15 @@ fun SolaceApp(
                     }
                 }
             ) { paddingValues ->
+                val bottomPadding = if (isBottomNavVisible && currentScreen != Screen.Companion) {
+                    paddingValues.calculateBottomPadding()
+                } else {
+                    0.dp
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = paddingValues.calculateBottomPadding())
+                        .padding(bottom = bottomPadding)
                 ) {
                     Crossfade(
                         targetState = currentScreen,
@@ -274,7 +285,12 @@ fun SolaceApp(
                                             scope = coroutineScope
                                         )
                                     },
-                                    onNavigateToAuth = { currentScreen = Screen.Auth }
+                                    onNavigateToAuth = { currentScreen = Screen.Auth },
+                                    onDeleteAccount = {
+                                        viewModel.deleteAccount {
+                                            currentScreen = Screen.Auth
+                                        }
+                                    }
                                 )
                             }
                         }

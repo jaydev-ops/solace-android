@@ -74,6 +74,62 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class WeekDayMoodItem(
+    val dayLabel: String,
+    val isToday: Boolean,
+    val isFuture: Boolean,
+    val mood: MoodType?
+)
+
+fun formatUserGreeting(timeGreeting: String, rawName: String?): String {
+    val clean = rawName?.trim()
+    val isValid = !clean.isNullOrBlank() &&
+        !clean.equals("Sanctuary", ignoreCase = true) &&
+        !clean.equals("User", ignoreCase = true) &&
+        !clean.equals("Guest", ignoreCase = true) &&
+        !clean.equals("Sanctuary Guest", ignoreCase = true)
+    return if (isValid) {
+        "$timeGreeting, $clean."
+    } else {
+        "$timeGreeting."
+    }
+}
+
+fun calculateCurrentWeekMoods(weeklyMoods: List<MoodEntryEntity>): List<WeekDayMoodItem> {
+    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+    val cal = java.util.Calendar.getInstance().apply {
+        firstDayOfWeek = java.util.Calendar.MONDAY
+    }
+    val todayDayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
+    val daysFromMonday = (todayDayOfWeek - java.util.Calendar.MONDAY + 7) % 7
+
+    cal.add(java.util.Calendar.DAY_OF_YEAR, -daysFromMonday)
+    cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+    cal.set(java.util.Calendar.MINUTE, 0)
+    cal.set(java.util.Calendar.SECOND, 0)
+    cal.set(java.util.Calendar.MILLISECOND, 0)
+
+    return (0..6).map { dayIndex ->
+        val dayStart = cal.timeInMillis
+        cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+        val dayEnd = cal.timeInMillis - 1
+
+        val isToday = dayIndex == daysFromMonday
+        val isFuture = dayIndex > daysFromMonday
+
+        val dayMoodEntries = weeklyMoods.filter { it.timestamp in dayStart..dayEnd }
+        val latestDayEntry = dayMoodEntries.maxByOrNull { it.timestamp }
+        val mood = latestDayEntry?.let { MoodType.fromString(it.mood) }
+
+        WeekDayMoodItem(
+            dayLabel = dayLabels[dayIndex],
+            isToday = isToday,
+            isFuture = isFuture,
+            mood = mood
+        )
+    }
+}
+
 @Composable
 fun HomeScreen(
     userName: String,
@@ -92,14 +148,13 @@ fun HomeScreen(
     val currentHour = remember {
         java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
     }
-    val sanctuaryName = userName.ifBlank { "Sanctuary" }
 
-    val greetingInfo = remember(currentHour, sanctuaryName) {
+    val greetingInfo = remember(currentHour, userName) {
         when {
             currentHour in 4..11 -> {
                 HomeGreetingData(
                     tag = "Gentle Morning",
-                    greeting = "Good morning, $sanctuaryName.",
+                    greeting = formatUserGreeting("Good morning", userName),
                     icon = Icons.Filled.WbSunny,
                     subtitle = "How is your spirit feeling in this quiet hour?"
                 )
@@ -107,7 +162,7 @@ fun HomeScreen(
             currentHour in 12..16 -> {
                 HomeGreetingData(
                     tag = "Peaceful Afternoon",
-                    greeting = "Good afternoon, $sanctuaryName.",
+                    greeting = formatUserGreeting("Good afternoon", userName),
                     icon = Icons.Filled.WbSunny,
                     subtitle = "Take a gentle pause to breathe and check in with yourself."
                 )
@@ -115,11 +170,20 @@ fun HomeScreen(
             else -> {
                 HomeGreetingData(
                     tag = "Quiet Evening",
-                    greeting = "Good evening, $sanctuaryName.",
+                    greeting = formatUserGreeting("Good evening", userName),
                     icon = Icons.Filled.Nightlight,
                     subtitle = "Unwind your thoughts and let your spirit rest in peace."
                 )
             }
+        }
+    }
+
+    val topBarTitle = remember(userName) {
+        val clean = userName.trim()
+        if (clean.isNotBlank() && !clean.equals("Sanctuary", ignoreCase = true) && !clean.equals("User", ignoreCase = true) && !clean.equals("Guest", ignoreCase = true)) {
+            clean
+        } else {
+            "Sanctuary Haven"
         }
     }
 
@@ -132,7 +196,7 @@ fun HomeScreen(
     ) {
         SolaceTopBar(
             subtitle = "peaceful haven",
-            userName = sanctuaryName,
+            userName = topBarTitle,
             onAvatarClick = onOpenSettings
         )
 
@@ -456,29 +520,22 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Weekly days dots
-                        val weekDays = listOf("M", "T", "W", "T", "F", "S", "S")
-                        val sampleMoods = listOf(
-                            MoodType.CALM,
-                            MoodType.HAPPY,
-                            latestMood?.let { MoodType.fromString(it.mood) } ?: MoodType.HAPPY,
-                            MoodType.CALM,
-                            null,
-                            null,
-                            null
-                        )
+                        // Weekly days dots (dynamically aligned to real calendar dates)
+                        val weekItems = remember(weeklyMoods) {
+                            calculateCurrentWeekMoods(weeklyMoods)
+                        }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            weekDays.forEachIndexed { index, day ->
-                                val mood = sampleMoods.getOrNull(index)
+                            weekItems.forEach { item ->
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = day,
+                                        text = item.dayLabel,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = WarmGrey
+                                        color = if (item.isToday) moodColors.primary else WarmGrey,
+                                        fontWeight = if (item.isToday) FontWeight.Bold else FontWeight.Normal
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Box(
@@ -486,21 +543,21 @@ fun HomeScreen(
                                             .size(28.dp)
                                             .clip(CircleShape)
                                             .background(
-                                                mood?.bgTint ?: PaleVanilla
+                                                item.mood?.bgTint ?: PaleVanilla
                                             )
                                             .border(
-                                                width = 1.dp,
-                                                color = mood?.accentColor?.copy(alpha = 0.6f) ?: MutedBeige,
+                                                width = if (item.isToday) 1.5.dp else 1.dp,
+                                                color = if (item.isToday) moodColors.primary else (item.mood?.accentColor?.copy(alpha = 0.6f) ?: MutedBeige),
                                                 shape = CircleShape
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        if (mood != null) {
+                                        if (item.mood != null) {
                                             Box(
                                                 modifier = Modifier
                                                     .size(9.dp)
                                                     .clip(CircleShape)
-                                                    .background(mood.accentColor)
+                                                    .background(item.mood.accentColor)
                                             )
                                         } else {
                                             Text(
@@ -512,10 +569,10 @@ fun HomeScreen(
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = if (index == 2) "Today" else mood?.title ?: "—",
+                                        text = if (item.isToday) "Today" else item.mood?.title ?: "—",
                                         fontSize = 10.sp,
-                                        color = if (index == 2) moodColors.primary else WarmGrey,
-                                        fontWeight = if (index == 2) FontWeight.Bold else FontWeight.Normal
+                                        color = if (item.isToday) moodColors.primary else WarmGrey,
+                                        fontWeight = if (item.isToday) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
                             }

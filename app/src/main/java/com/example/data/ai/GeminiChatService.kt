@@ -95,7 +95,7 @@ class GeminiChatService {
         latestUserMessage: String,
         contextAnchor: String? = null,
         customApiKey: String? = null,
-        userName: String = "Sanctuary"
+        userName: String = ""
     ): Flow<String> = flow {
         // Map role to regulation mode for matching guidance
         val regulationMode = when (role) {

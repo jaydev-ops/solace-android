@@ -10,12 +10,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -80,7 +84,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
@@ -105,15 +109,24 @@ fun ChatScreen(
             else -> "Good evening"
         }
     }
-    val sanctuaryName = userPreferences.userName.ifBlank { "Sanctuary" }
+    val greetingHeading = remember(timeGreeting, userPreferences.userName) {
+        val clean = userPreferences.userName.trim()
+        val isValid = clean.isNotBlank() &&
+            !clean.equals("Sanctuary", ignoreCase = true) &&
+            !clean.equals("User", ignoreCase = true) &&
+            !clean.equals("Guest", ignoreCase = true) &&
+            !clean.equals("Sanctuary Guest", ignoreCase = true)
+        if (isValid) "$timeGreeting, $clean" else timeGreeting
+    }
 
     var inputText by remember { mutableStateOf("") }
     var showAudioModal by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val moodColors = LocalMoodColors.current
+    val isImeVisible = WindowInsets.isImeVisible
 
-    // Auto-scroll when new messages arrive or when streaming
-    LaunchedEffect(messages.size, uiState) {
+    // Auto-scroll when new messages arrive, when streaming, or when keyboard opens
+    LaunchedEffect(messages.size, uiState, isImeVisible) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size)
         }
@@ -122,9 +135,9 @@ fun ChatScreen(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .imePadding()
             .testTag("chat_screen"),
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -197,6 +210,8 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .statusBarsPadding()
+                .imePadding()
         ) {
             // Model Selector Strip
             Column(
@@ -332,7 +347,7 @@ fun ChatScreen(
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "$timeGreeting, $sanctuaryName",
+                                    text = greetingHeading,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = SoftCharcoal
@@ -411,7 +426,9 @@ fun ChatScreen(
 
             // Bottom Composer Bar
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 shadowElevation = 6.dp

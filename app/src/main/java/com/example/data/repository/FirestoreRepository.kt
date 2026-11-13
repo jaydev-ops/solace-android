@@ -43,7 +43,7 @@ class FirestoreRepository(private val db: FirebaseFirestore) {
 
     private fun requireUserId(): String {
         return auth?.currentUser?.uid
-            ?: throw IllegalStateException("User must be signed in with Google before accessing Firestore.")
+            ?: throw IllegalStateException("User must be authenticated before accessing Firestore.")
     }
 
     // Profile
@@ -243,6 +243,76 @@ class FirestoreRepository(private val db: FirebaseFirestore) {
             docRef.set(payload).await()
         } catch (e: Exception) {
             handleFirestoreError(e, OperationType.CREATE, docRef.path)
+            throw e
+        }
+    }
+
+    // --- Direct Restoration Fetches (for account recovery after re-install) ---
+
+    suspend fun fetchUserProfile(userId: String): FirestoreUserProfile? {
+        val docRef = db.collection("users").document(userId)
+        return try {
+            val snapshot = docRef.get().await()
+            if (snapshot.exists()) snapshot.toObject(FirestoreUserProfile::class.java) else null
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.GET, docRef.path)
+            null
+        }
+    }
+
+    suspend fun fetchMoodEntries(userId: String): List<FirestoreMoodEntry> {
+        val colRef = db.collection("users").document(userId).collection("mood_entries")
+        return try {
+            val snapshot = colRef.orderBy("createdAt", Query.Direction.DESCENDING).get().await()
+            snapshot.toObjects(FirestoreMoodEntry::class.java)
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.LIST, colRef.path)
+            emptyList()
+        }
+    }
+
+    suspend fun fetchJournalEntries(userId: String): List<FirestoreJournalEntry> {
+        val colRef = db.collection("users").document(userId).collection("journal_entries")
+        return try {
+            val snapshot = colRef.orderBy("createdAt", Query.Direction.DESCENDING).get().await()
+            snapshot.toObjects(FirestoreJournalEntry::class.java)
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.LIST, colRef.path)
+            emptyList()
+        }
+    }
+
+    suspend fun fetchChatMessages(userId: String): List<FirestoreChatMessage> {
+        val colRef = db.collection("users").document(userId).collection("chat_messages")
+        return try {
+            val snapshot = colRef.orderBy("createdAt", Query.Direction.ASCENDING).get().await()
+            snapshot.toObjects(FirestoreChatMessage::class.java)
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.LIST, colRef.path)
+            emptyList()
+        }
+    }
+
+    suspend fun deleteUserAccountAndData(userId: String) {
+        val userDoc = db.collection("users").document(userId)
+        try {
+            // Delete subcollections
+            val moods = userDoc.collection("mood_entries").get().await()
+            for (d in moods.documents) d.reference.delete().await()
+
+            val journals = userDoc.collection("journal_entries").get().await()
+            for (d in journals.documents) d.reference.delete().await()
+
+            val chats = userDoc.collection("chat_messages").get().await()
+            for (d in chats.documents) d.reference.delete().await()
+
+            val audio = userDoc.collection("audio_transcriptions").get().await()
+            for (d in audio.documents) d.reference.delete().await()
+
+            // Delete user doc
+            userDoc.delete().await()
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.DELETE, userDoc.path)
             throw e
         }
     }

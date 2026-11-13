@@ -181,7 +181,7 @@ abstract class SolaceDatabase : RoomDatabase() {
             db.chatDao().insertMessage(
                 ChatMessageEntity(
                     senderRole = "assistant",
-                    content = "$timeGreeting, Sanctuary. I noticed you logged feeling calm today with a quiet morning. I'm here with you in your sanctuary. What's on your mind right now?",
+                    content = "$timeGreeting. I noticed you logged feeling calm today with a quiet morning. I'm here with you in your sanctuary. What's on your mind right now?",
                     regulationMode = "LISTEN",
                     contextAnchor = "Sanctuary Context • Space is held with quiet reverence.",
                     timestamp = now - 1800_000L

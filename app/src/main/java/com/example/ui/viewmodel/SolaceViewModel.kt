@@ -58,7 +58,9 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
     private val authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
         _currentUser.value = firebaseAuth.currentUser
         firebaseAuth.currentUser?.let { user ->
-            syncUserProfileToFirestore(user)
+            viewModelScope.launch {
+                restoreUserDataFromFirestore(user.uid)
+            }
         }
     }
 
@@ -547,6 +549,19 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
+    suspend fun restoreUserDataFromFirestore(userId: String) {
+        try {
+            val profile = firestoreRepository.fetchUserProfile(userId)
+            val moods = firestoreRepository.fetchMoodEntries(userId)
+            val journals = firestoreRepository.fetchJournalEntries(userId)
+            val chats = firestoreRepository.fetchChatMessages(userId)
+            repository.restoreUserData(profile, moods, journals, chats)
+            Log.i(TAG, "Restored user data from Firestore for $userId: moods=${moods.size}, journals=${journals.size}, chats=${chats.size}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to restore user data from Firestore", e)
+        }
+    }
+
     suspend fun loginWithPassword(email: String, password: String): Result<String> {
         val cleanEmail = email.trim().lowercase()
         if (cleanEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(cleanEmail).matches()) {
@@ -556,35 +571,61 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
             return Result.failure(IllegalArgumentException("Password must be at least 6 characters"))
         }
 
-        // Try local SQLite account
+        // 1. Try local SQLite account (same installation)
         val localAccount = repository.getAccountByEmail(cleanEmail)
         val inputHash = hashPassword(password)
 
         if (localAccount != null) {
             if (localAccount.passwordHash == inputHash) {
                 repository.setLoggedIn(true, localAccount.email, localAccount.displayName)
-                return Result.success("Welcome back, ${localAccount.displayName}")
+                // Connect Firebase backend if available
+                try {
+                    auth?.signInWithEmailAndPassword(cleanEmail, password)?.await()
+                } catch (_: Exception) {}
+                auth?.currentUser?.uid?.let { uid ->
+                    restoreUserDataFromFirestore(uid)
+                }
+                return Result.success("Welcome back, ${localAccount.displayName}!")
             } else {
                 return Result.failure(IllegalArgumentException("Incorrect password for $cleanEmail"))
             }
         }
 
-        // Also check if Firebase Auth has this user (if Firebase is online)
+        // 2. Local account not found (app was reinstalled / data cleared)
+        // Authenticate with remote Firebase backend to restore account & data
         try {
-            auth?.signInWithEmailAndPassword(cleanEmail, password)?.await()
-            val user = auth?.currentUser
-            val name = user?.displayName ?: cleanEmail.substringBefore("@")
-            repository.setLoggedIn(true, cleanEmail, name)
-            repository.createAccount(cleanEmail, name, inputHash)
-            return Result.success("Signed in successfully as $name")
-        } catch (_: Exception) {}
+            val authResult = auth?.signInWithEmailAndPassword(cleanEmail, password)?.await()
+            val user = authResult?.user ?: auth?.currentUser
+            if (user != null) {
+                val displayName = user.displayName?.ifBlank { null }
+                    ?: cleanEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+
+                // Restore local account record so subsequent offline launches work
+                repository.createAccount(cleanEmail, displayName, inputHash)
+                repository.setLoggedIn(true, cleanEmail, displayName)
+
+                // Restore all cloud-persisted user data from Firestore
+                restoreUserDataFromFirestore(user.uid)
+
+                return Result.success("Welcome back, $displayName! Your account data has been restored.")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase signIn failed", e)
+            val msg = when {
+                e.message?.contains("password", ignoreCase = true) == true -> "Incorrect password for $cleanEmail"
+                e.message?.contains("no user", ignoreCase = true) == true ||
+                e.message?.contains("user-not-found", ignoreCase = true) == true -> "Account not found. Please create an account."
+                else -> "Unable to sign in. Please verify your email and password."
+            }
+            return Result.failure(IllegalArgumentException(msg))
+        }
 
         return Result.failure(IllegalArgumentException("Account not found. Please create an account."))
     }
 
     suspend fun registerWithPassword(name: String, email: String, password: String): Result<String> {
-        val cleanName = name.trim().ifBlank { "Sanctuary Guest" }
         val cleanEmail = email.trim().lowercase()
+        val cleanName = name.trim().ifBlank { cleanEmail.substringBefore("@").replaceFirstChar { it.uppercase() } }
         if (cleanEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(cleanEmail).matches()) {
             return Result.failure(IllegalArgumentException("Please enter a valid email address"))
         }
@@ -601,10 +642,34 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
         repository.createAccount(cleanEmail, cleanName, passHash)
         repository.setLoggedIn(true, cleanEmail, cleanName)
 
-        // Also try Firebase createUser if online
+        // Firebase Auth remote account creation & profile sync
         try {
-            auth?.createUserWithEmailAndPassword(cleanEmail, password)?.await()
-        } catch (_: Exception) {}
+            val result = auth?.createUserWithEmailAndPassword(cleanEmail, password)?.await()
+            val user = result?.user
+            if (user != null) {
+                try {
+                    val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                        .setDisplayName(cleanName)
+                        .build()
+                    user.updateProfile(profileUpdates).await()
+                } catch (_: Exception) {}
+
+                val profile = FirestoreUserProfile(
+                    userId = user.uid,
+                    displayName = cleanName,
+                    email = cleanEmail,
+                    pinnedTheme = userPreferences.value.pinnedTheme,
+                    isDarkMode = userPreferences.value.isDarkMode,
+                    aiPersonalisationConsent = userPreferences.value.aiPersonalisationConsent
+                )
+                firestoreRepository.saveUserProfile(profile)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase createUser failed: ${e.message}")
+            if (e.message?.contains("already in use", ignoreCase = true) == true) {
+                return Result.failure(IllegalArgumentException("An account with this email already exists on the server. Please sign in."))
+            }
+        }
 
         return Result.success("Account created successfully. Welcome, $cleanName!")
     }
@@ -620,7 +685,34 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 auth?.signOut()
             } catch (_: Exception) {}
-            repository.setLoggedIn(false, "", "Sanctuary")
+            repository.setLoggedIn(false, "", "")
+        }
+    }
+
+    fun deleteAccount(onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val user = auth?.currentUser
+                val uid = user?.uid
+                if (uid != null) {
+                    try {
+                        firestoreRepository.deleteUserAccountAndData(uid)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to delete firestore user data", e)
+                    }
+                    try {
+                        user.delete().await()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to delete Firebase user", e)
+                    }
+                }
+                repository.clearAllSanctuaryData()
+                repository.setLoggedIn(false, "", "")
+                onComplete(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete account", e)
+                onComplete(false)
+            }
         }
     }
 

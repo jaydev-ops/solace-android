@@ -334,8 +334,8 @@ fun AuthScreen(
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("Your Name or Sanctuary Alias") },
-                            placeholder = { Text("e.g. Haven, Luna, or your name") },
+                            label = { Text("Your Display Name") },
+                            placeholder = { Text("e.g. Jayesh") },
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = null, tint = WarmGrey)
                             },

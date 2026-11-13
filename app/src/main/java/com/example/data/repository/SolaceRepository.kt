@@ -6,6 +6,10 @@ import com.example.data.local.entity.JournalEntryEntity
 import com.example.data.local.entity.MoodEntryEntity
 import com.example.data.local.entity.RegulationSessionEntity
 import com.example.data.local.entity.UserPreferencesEntity
+import com.example.data.model.FirestoreChatMessage
+import com.example.data.model.FirestoreJournalEntry
+import com.example.data.model.FirestoreMoodEntry
+import com.example.data.model.FirestoreUserProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -248,7 +252,84 @@ class SolaceRepository(private val db: SolaceDatabase) {
         db.regulationDao().deleteAllSessions()
     }
 
-    suspend fun migrateLegacyDefaultName(legacyName: String = "Sarah", replacementName: String = "Sanctuary") = withContext(Dispatchers.IO) {
+    suspend fun restoreUserData(
+        profile: FirestoreUserProfile?,
+        moods: List<FirestoreMoodEntry>,
+        journals: List<FirestoreJournalEntry>,
+        chats: List<FirestoreChatMessage>
+    ) = withContext(Dispatchers.IO) {
+        // 1. Preferences & Profile
+        if (profile != null) {
+            val current = db.userPreferencesDao().getPreferencesSync() ?: UserPreferencesEntity()
+            val restoredName = profile.displayName.trim().ifBlank { current.userName }
+            db.userPreferencesDao().upsertPreferences(
+                current.copy(
+                    userName = restoredName,
+                    pinnedTheme = profile.pinnedTheme ?: current.pinnedTheme,
+                    isDarkMode = profile.isDarkMode,
+                    aiPersonalisationConsent = profile.aiPersonalisationConsent,
+                    isLoggedIn = true
+                )
+            )
+        }
+
+        // 2. Moods
+        if (moods.isNotEmpty()) {
+            for (m in moods) {
+                val timestamp = m.createdAt?.toDate()?.time ?: System.currentTimeMillis()
+                db.moodDao().insertMoodEntry(
+                    MoodEntryEntity(
+                        id = 0,
+                        mood = m.mood,
+                        valence = m.valence.toInt(),
+                        intensity = m.intensity.toInt(),
+                        tags = m.tags,
+                        note = m.note,
+                        timestamp = timestamp
+                    )
+                )
+            }
+        }
+
+        // 3. Journals
+        if (journals.isNotEmpty()) {
+            for (j in journals) {
+                val createdAt = j.createdAt?.toDate()?.time ?: System.currentTimeMillis()
+                val updatedAt = j.updatedAt?.toDate()?.time ?: createdAt
+                db.journalDao().insertEntry(
+                    JournalEntryEntity(
+                        id = 0,
+                        title = j.title,
+                        content = j.content,
+                        associatedMood = j.associatedMood,
+                        tags = j.tags,
+                        wordCount = j.wordCount.toInt(),
+                        isDeleted = false,
+                        createdAt = createdAt,
+                        updatedAt = updatedAt
+                    )
+                )
+            }
+        }
+
+        // 4. Chats
+        if (chats.isNotEmpty()) {
+            for (c in chats) {
+                val timestamp = c.createdAt?.toDate()?.time ?: System.currentTimeMillis()
+                db.chatDao().insertMessage(
+                    ChatMessageEntity(
+                        senderRole = c.senderRole,
+                        content = c.content,
+                        regulationMode = c.systemRole,
+                        contextAnchor = c.modelName,
+                        timestamp = timestamp
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun migrateLegacyDefaultName(legacyName: String = "Sarah", replacementName: String = "") = withContext(Dispatchers.IO) {
         val prefs = db.userPreferencesDao().getPreferencesSync()
         if (prefs != null && (prefs.userName.equals(legacyName, ignoreCase = true) || prefs.userName.isBlank())) {
             db.userPreferencesDao().upsertPreferences(prefs.copy(userName = replacementName))

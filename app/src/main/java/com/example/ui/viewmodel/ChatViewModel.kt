@@ -154,7 +154,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     history = history,
                     latestUserMessage = trimmed,
                     customApiKey = prefs.customGeminiApiKey,
-                    userName = prefs.userName.ifBlank { "Sanctuary" }
+                    userName = prefs.userName.trim()
                 ).collect { chunk ->
                     accumulatedResponse.append(chunk)
                     _uiState.value = ChatUiState.Streaming(accumulatedResponse.toString())
@@ -249,16 +249,22 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Seed clean welcome message for new conversation with sanctuary name and time-based greeting
+            // Seed clean welcome message for new conversation with actual user name or neutral greeting
             val prefs = userPreferences.value
-            val sanctuaryName = prefs.userName.ifBlank { "Sanctuary" }
+            val cleanName = prefs.userName.trim()
+            val hasValidName = cleanName.isNotBlank() &&
+                !cleanName.equals("Sanctuary", ignoreCase = true) &&
+                !cleanName.equals("User", ignoreCase = true) &&
+                !cleanName.equals("Guest", ignoreCase = true) &&
+                !cleanName.equals("Sanctuary Guest", ignoreCase = true)
             val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
             val timeGreeting = when {
                 currentHour in 4..11 -> "Good morning"
                 currentHour in 12..16 -> "Good afternoon"
                 else -> "Good evening"
             }
-            val initialMsg = "$timeGreeting, $sanctuaryName. I'm here with you in your sanctuary. What's on your mind right now?"
+            val greeting = if (hasValidName) "$timeGreeting, $cleanName." else "$timeGreeting."
+            val initialMsg = "$greeting I'm here with you in your sanctuary. What's on your mind right now?"
             if (prefs.allowMemorySaving) {
                 repository.saveChatMessage(
                     senderRole = "assistant",
