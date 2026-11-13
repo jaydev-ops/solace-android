@@ -116,7 +116,7 @@ fun SolaceApp(
                     }
                 }
             ) { paddingValues ->
-                val bottomPadding = if (isBottomNavVisible && currentScreen != Screen.Companion) {
+                val bottomPadding = if (isBottomNavVisible) {
                     paddingValues.calculateBottomPadding()
                 } else {
                     0.dp

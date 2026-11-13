@@ -16,10 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -215,7 +213,6 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .statusBarsPadding()
                 .imePadding()
         ) {
             // Model Selector Strip
@@ -449,9 +446,7 @@ fun ChatScreen(
 
             // Bottom Composer Bar
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding(),
+                modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 shadowElevation = 6.dp
