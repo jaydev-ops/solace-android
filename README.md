@@ -92,3 +92,4 @@
 ## 🛡️ License & Privacy
 
 All personal thoughts, emotional check-ins, journal reflections, and audio recordings remain strictly on your local device. Solace+ requires zero mandatory cloud connectivity to deliver complete emotional sanctuary support.
+
