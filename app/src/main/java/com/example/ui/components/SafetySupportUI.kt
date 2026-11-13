@@ -410,3 +410,4 @@ private fun openContactOptions(context: Context) {
         } catch (_: Exception) {}
     }
 }
+

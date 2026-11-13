@@ -52,3 +52,4 @@ object EmergencyResources {
         return if (country.equals("IN", ignoreCase = true)) "14416" else "988"
     }
 }
+

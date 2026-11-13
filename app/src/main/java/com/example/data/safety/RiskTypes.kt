@@ -125,3 +125,4 @@ data class SafetyAssessmentResult(
     val showEmergencyUI: Boolean,
     val showSupportCard: Boolean
 )
+
