@@ -16,16 +16,18 @@ const MOODS_KEY = 'solace_mood_entries';
 const JOURNAL_KEY = 'solace_journal_entries';
 const REGULATION_KEY = 'solace_regulation_records';
 const CHAT_KEY = 'solace_chat_history';
+const KNOWN_USERS_KEY = 'solace_known_users';
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
-  sanctuaryName: 'Jayesh',
+  sanctuaryName: '',
   theme: 'system',
   pinnedMood: null,
   geminiApiKey: '',
   geminiModel: 'gemini-2.5-flash',
   chatbotRole: 'companion',
   soundEnabled: true,
-  memoryConsent: 'persisted'
+  memoryConsent: 'persisted',
+  isLoggedIn: false
 };
 
 // Seed initial mood check-ins for rich insights right out of the box
@@ -189,15 +191,66 @@ export class StorageService {
     }
   }
 
-  static getChatMessages(): ChatMessage[] {
+  static getKnownUsers(): string[] {
+    try {
+      const raw = localStorage.getItem(KNOWN_USERS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {
+      console.warn('Could not read known users:', e);
+    }
+    return [];
+  }
+
+  static addKnownUser(name: string): void {
+    const clean = name.trim();
+    if (!clean) return;
+    try {
+      const users = this.getKnownUsers();
+      if (!users.some((u) => u.toLowerCase() === clean.toLowerCase())) {
+        users.push(clean);
+        localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(users));
+      }
+    } catch (e) {
+      console.warn('Could not save known user:', e);
+    }
+  }
+
+  static removeKnownUser(name: string): void {
+    const clean = name.trim();
+    try {
+      const users = this.getKnownUsers().filter((u) => u.toLowerCase() !== clean.toLowerCase());
+      localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(users));
+    } catch (e) {
+      console.warn('Could not remove known user:', e);
+    }
+  }
+
+  private static getUserChatKey(userName?: string): string {
+    const clean = userName?.trim().toLowerCase();
+    if (clean && clean !== 'guest' && clean !== 'user' && clean !== 'sanctuary') {
+      return `${CHAT_KEY}_${clean}`;
+    }
+    return CHAT_KEY;
+  }
+
+  static getChatMessages(userName?: string): ChatMessage[] {
     const prefs = this.getPreferences();
     if (prefs.memoryConsent === 'ephemeral') {
       return ephemeralChatHistory;
     }
 
+    const effectiveUser = (userName ?? prefs.sanctuaryName)?.trim();
+    const userKey = this.getUserChatKey(effectiveUser);
+
     try {
-      const data = localStorage.getItem(CHAT_KEY);
+      const data = localStorage.getItem(userKey);
       if (data) return JSON.parse(data);
+
+      // Only check legacy un-scoped key if there is no user specified (guest/legacy)
+      if (!effectiveUser) {
+        const legacy = localStorage.getItem(CHAT_KEY);
+        if (legacy) return JSON.parse(legacy);
+      }
     } catch (e) {
       console.warn('Could not read chat messages:', e);
     }
@@ -205,23 +258,35 @@ export class StorageService {
     return [];
   }
 
-  static saveChatMessages(messages: ChatMessage[]): void {
+  static saveChatMessages(messages: ChatMessage[], userName?: string): void {
     const prefs = this.getPreferences();
     if (prefs.memoryConsent === 'ephemeral') {
       ephemeralChatHistory = messages;
       return;
     }
 
+    const effectiveUser = (userName ?? prefs.sanctuaryName)?.trim();
+    const userKey = this.getUserChatKey(effectiveUser);
+
     try {
-      localStorage.setItem(CHAT_KEY, JSON.stringify(messages));
+      const payload = JSON.stringify(messages);
+      localStorage.setItem(userKey, payload);
+      if (!effectiveUser) {
+        localStorage.setItem(CHAT_KEY, payload);
+      }
     } catch (e) {
-      console.warn('Could not save chat messages:', e);
+      console.warn('Could not persist chat messages:', e);
     }
   }
 
-  static clearChatHistory(): void {
+  static clearChatHistory(userName?: string): void {
     ephemeralChatHistory = [];
+    const prefs = this.getPreferences();
+    const effectiveUser = userName || prefs.sanctuaryName;
+    const userKey = this.getUserChatKey(effectiveUser);
+
     try {
+      localStorage.removeItem(userKey);
       localStorage.removeItem(CHAT_KEY);
     } catch (e) {
       console.warn('Could not clear chat messages:', e);

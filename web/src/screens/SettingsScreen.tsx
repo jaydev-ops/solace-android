@@ -18,13 +18,15 @@ import {
   EyeOff,
   ExternalLink,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 
 export const SettingsScreen: React.FC = () => {
   const {
     preferences,
     updatePreferences,
+    logout,
     setIsMemoryModalOpen,
     setIsEmergencyModalOpen
   } = useSanctuary();
@@ -99,6 +101,58 @@ export const SettingsScreen: React.FC = () => {
           <span>Sanctuary settings updated successfully.</span>
         </div>
       )}
+
+      {/* Active Account / Session */}
+      <div className="solace-card" style={{ padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--solace-amber-primary)',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '1.2rem',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(217, 142, 4, 0.2)'
+              }}
+            >
+              {preferences.sanctuaryName?.trim() ? preferences.sanctuaryName.trim().charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div>
+              <span style={{ fontSize: '0.76rem', color: 'var(--solace-secondary-text)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+                Logged-in Sanctuary User
+              </span>
+              <h3 style={{ margin: '2px 0 0', fontSize: '1.2rem', fontWeight: 800, color: 'var(--solace-primary-text)' }}>
+                {preferences.sanctuaryName || 'Guest User'}
+              </h3>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={logout}
+            className="btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              fontSize: '0.86rem',
+              borderRadius: '14px',
+              fontWeight: 600
+            }}
+          >
+            <LogOut size={15} />
+            <span>Switch User / Log Out</span>
+          </button>
+        </div>
+      </div>
 
       <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Sanctuary Name & Identity */}

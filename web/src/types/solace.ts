@@ -409,4 +409,5 @@ export interface UserPreferences {
   chatbotRole: 'companion' | 'somatic' | 'cbt' | 'wisdom';
   soundEnabled: boolean;
   memoryConsent: 'persisted' | 'ephemeral';
+  isLoggedIn: boolean;
 }

@@ -19,7 +19,10 @@ import {
   Wind,
   Brain,
   Compass,
-  PhoneCall
+  PhoneCall,
+  Clock,
+  Download,
+  Trash2
 } from 'lucide-react';
 
 export const CompanionScreen: React.FC = () => {
@@ -139,6 +142,24 @@ export const CompanionScreen: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleExportChat = () => {
+    const lines = chatMessages.map((m) => {
+      const sender = m.role === 'user' ? (preferences.sanctuaryName || 'You') : 'Solace AI';
+      const time = m.timestamp ? new Date(m.timestamp).toLocaleString() : '';
+      return `[${time}] ${sender}:\n${m.text}\n`;
+    });
+    const content = `# Solace+ Conversation History\nUser: ${preferences.sanctuaryName || 'Sanctuary Friend'}\nExported: ${new Date().toLocaleString()}\nTotal Messages: ${chatMessages.length}\n\n---\n\n${lines.join('\n')}`;
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `solace-chat-${(preferences.sanctuaryName || 'history').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const currentRoleObj = chatbotRoles.find((r) => r.id === preferences.chatbotRole) || chatbotRoles[0];
@@ -307,10 +328,79 @@ export const CompanionScreen: React.FC = () => {
           </div>
         </div>
 
+        {/* Chat History Header Controls */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 12px',
+            backgroundColor: 'var(--solace-surface-raised)',
+            borderRadius: '16px',
+            border: '1px solid var(--solace-border)',
+            fontSize: '11px',
+            color: 'var(--solace-secondary-text)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Clock size={13} style={{ color: 'var(--solace-amber-primary)' }} />
+            <span>
+              <strong>{chatMessages.length}</strong> messages in history
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={handleExportChat}
+              className="btn-ghost"
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                borderRadius: '8px',
+                color: 'var(--solace-primary-text)'
+              }}
+              title="Download conversation history"
+            >
+              <Download size={12} />
+              <span>Export</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Are you sure you want to clear your current conversation history? This cannot be undone.')) {
+                  clearChat();
+                }
+              }}
+              className="btn-ghost"
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                borderRadius: '8px',
+                color: 'var(--solace-emergency)'
+              }}
+              title="Reset conversation"
+            >
+              <Trash2 size={12} />
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
         {/* 4. Chat Messages List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '4px' }}>
           {chatMessages.map((msg) => {
             const isUser = msg.role === 'user';
+            const formattedTime = msg.timestamp
+              ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : '';
             return (
               <div
                 key={msg.id}
@@ -321,6 +411,23 @@ export const CompanionScreen: React.FC = () => {
                   gap: '4px'
                 }}
               >
+                {/* Sender badge & timestamp */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    color: 'var(--solace-secondary-text)',
+                    padding: '0 4px'
+                  }}
+                >
+                  {!isUser && <span style={{ color: 'var(--solace-amber-primary)' }}>✨</span>}
+                  <span>{isUser ? (preferences.sanctuaryName || 'You') : 'Solace AI'}</span>
+                  {formattedTime && <span style={{ fontWeight: 400, opacity: 0.8 }}>• {formattedTime}</span>}
+                </div>
+
                 <div
                   className={`message-bubble ${isUser ? 'user' : 'assistant'}`}
                   style={{ whiteSpace: 'pre-wrap' }}

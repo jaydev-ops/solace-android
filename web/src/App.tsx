@@ -12,9 +12,14 @@ import { RegulationScreen } from './screens/RegulationScreen';
 import { JournalScreen } from './screens/JournalScreen';
 import { InsightsScreen } from './screens/InsightsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { LoginScreen } from './screens/LoginScreen';
 
 const MainShell: React.FC = () => {
-  const { activeScreen, setActiveScreen } = useSanctuary();
+  const { activeScreen, setActiveScreen, isLoggedIn } = useSanctuary();
+
+  if (!isLoggedIn) {
+    return <LoginScreen />;
+  }
 
   const isSubScreen = activeScreen === 'regulation' || activeScreen === 'settings';
 

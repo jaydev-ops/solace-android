@@ -46,6 +46,13 @@ interface SanctuaryContextType {
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   clearChat: () => void;
 
+  // Authentication & Identity
+  isLoggedIn: boolean;
+  login: (name: string) => void;
+  logout: () => void;
+  knownUsers: string[];
+  removeKnownUser: (name: string) => void;
+
   // Dialogs
   isEmergencyModalOpen: boolean;
   setIsEmergencyModalOpen: (open: boolean) => void;
@@ -61,7 +68,8 @@ export const SanctuaryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [moods, setMoods] = useState<MoodCheckIn[]>(() => StorageService.getMoods());
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => StorageService.getJournalEntries());
   const [regulationRecords, setRegulationRecords] = useState<RegulationRecord[]>(() => StorageService.getRegulationRecords());
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => StorageService.getChatMessages());
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => StorageService.getChatMessages(preferences.sanctuaryName));
+  const [knownUsers, setKnownUsers] = useState<string[]>(() => StorageService.getKnownUsers());
   const [activeRegulationActivity, setActiveRegulationActivity] = useState<RegulationActivity | null>(null);
 
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
@@ -108,8 +116,8 @@ export const SanctuaryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Sync chat messages to storage
   useEffect(() => {
-    StorageService.saveChatMessages(chatMessages);
-  }, [chatMessages]);
+    StorageService.saveChatMessages(chatMessages, preferences.sanctuaryName);
+  }, [chatMessages, preferences.sanctuaryName]);
 
   const updatePreferences = (updates: Partial<UserPreferences>) => {
     setPreferences((prev) => {
@@ -199,9 +207,59 @@ export const SanctuaryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setActiveRegulationActivity(null);
   };
 
+  const login = (name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    StorageService.addKnownUser(clean);
+    setKnownUsers(StorageService.getKnownUsers());
+
+    updatePreferences({
+      sanctuaryName: clean,
+      isLoggedIn: true
+    });
+
+    const userHistory = StorageService.getChatMessages(clean);
+    if (userHistory.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: 'msg-welcome-' + Date.now(),
+        role: 'assistant',
+        text: `Welcome to your emotional sanctuary, ${clean}. I am here to hold whatever is in your thoughts without judgment or rush.\n\nTake an unhurried breath. You can choose a regulation mode or speak whatever feels heavy today.`,
+        timestamp: Date.now(),
+        regulationMode: 'listen'
+      };
+      setChatMessages([welcomeMessage]);
+      StorageService.saveChatMessages([welcomeMessage], clean);
+    } else {
+      setChatMessages(userHistory);
+    }
+
+    setActiveScreen('home');
+    soundManager.playSingingBowlChime(432, 2.5);
+  };
+
+  const logout = () => {
+    updatePreferences({
+      isLoggedIn: false
+    });
+    setActiveScreen('home');
+  };
+
+  const removeKnownUser = (name: string) => {
+    StorageService.removeKnownUser(name);
+    setKnownUsers(StorageService.getKnownUsers());
+  };
+
   const clearChat = () => {
-    StorageService.clearChatHistory();
-    setChatMessages([]);
+    StorageService.clearChatHistory(preferences.sanctuaryName);
+    const welcomeMessage: ChatMessage = {
+      id: 'msg-welcome-' + Date.now(),
+      role: 'assistant',
+      text: `Welcome to your emotional sanctuary, ${preferences.sanctuaryName || 'friend'}. I am here to hold whatever is in your thoughts without judgment or rush.\n\nTake an unhurried breath. You can choose a regulation mode or speak whatever feels heavy today.`,
+      timestamp: Date.now(),
+      regulationMode: 'listen'
+    };
+    setChatMessages([welcomeMessage]);
+    StorageService.saveChatMessages([welcomeMessage], preferences.sanctuaryName);
   };
 
   return (
@@ -228,6 +286,11 @@ export const SanctuaryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         chatMessages,
         setChatMessages,
         clearChat,
+        isLoggedIn: Boolean(preferences.isLoggedIn && preferences.sanctuaryName?.trim()),
+        login,
+        logout,
+        knownUsers,
+        removeKnownUser,
         isEmergencyModalOpen,
         setIsEmergencyModalOpen,
         isMemoryModalOpen,

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && cp dist/index.html dist/200.html",
-    "test": "tsx src/tests/engineValidation.ts && tsx src/tests/batch1Validation.ts && tsx src/tests/batch2Validation.ts && tsx src/tests/batch3Validation.ts && tsx src/tests/batch4Validation.ts",
+    "test": "tsx src/tests/engineValidation.ts && tsx src/tests/batch1Validation.ts && tsx src/tests/batch2Validation.ts && tsx src/tests/batch3Validation.ts && tsx src/tests/batch4Validation.ts && tsx src/tests/authAndHistoryValidation.ts",
     "preview": "vite preview"
   },
   "dependencies": {
