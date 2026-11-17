@@ -1,6 +1,10 @@
 package com.example.ui.screens.settings
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,11 +25,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
@@ -77,8 +85,8 @@ import com.example.data.local.entity.UserPreferencesEntity
 import com.example.data.model.MoodType
 import com.example.ui.theme.ButteryYellow
 import com.example.ui.theme.LocalMoodColors
+import com.example.ui.theme.LocalSolaceColors
 import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
 import com.example.ui.theme.SoftButter
 import com.example.ui.theme.SoftCharcoal
 import com.example.ui.theme.WarmGrey
@@ -90,11 +98,12 @@ fun SettingsScreen(
     userPreferences: UserPreferencesEntity,
     onUpdateName: (String) -> Unit,
     onUpdatePinnedTheme: (String?) -> Unit,
-    onToggleDarkMode: (Boolean) -> Unit,
+    onSetAppearanceMode: (String) -> Unit,
+    onToggleDarkMode: (Boolean) -> Unit = {},
     onToggleAiConsent: (Boolean) -> Unit,
     onToggleMemorySaving: (Boolean) -> Unit = {},
     onSaveCustomGeminiApiKey: (String) -> Unit = {},
-    onExportDataJson: suspend () -> String,
+    onExportDataJson: (suspend () -> String)? = null,
     onClearAllData: () -> Unit,
     onBack: () -> Unit,
     currentUser: com.google.firebase.auth.FirebaseUser? = null,
@@ -105,19 +114,15 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
     val coroutineScope = rememberCoroutineScope()
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
 
     var showNameDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
     var showClearConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showCrisisDialog by remember { mutableStateOf(false) }
-    var showApiKeyDialog by remember { mutableStateOf(false) }
-    var exportedJsonContent by remember { mutableStateOf("") }
-    var apiKeyInput by remember { mutableStateOf(userPreferences.customGeminiApiKey) }
-    var apiKeySavedNotification by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.testTag("settings_screen"),
@@ -234,7 +239,8 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .size(44.dp)
                                         .clip(CircleShape)
-                                        .background(PaleVanilla),
+                                        .background(solaceColors.inputBackground)
+                                        .border(1.dp, solaceColors.border, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -453,176 +459,135 @@ fun SettingsScreen(
                 }
             }
 
-            // Google Gemini AI Key Section
+            // Atmosphere & Appearance Section
             item {
-                SectionHeader(title = "Gemini AI Engine Settings")
+                SectionHeader(title = "Atmosphere & Appearance")
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(PaleVanilla),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Key,
-                                    contentDescription = null,
-                                    tint = moodColors.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "Google Gemini API Key (Optional)",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (userPreferences.customGeminiApiKey.isNotBlank()) "Key configured • Online Gemini enabled" else "Offline Sanctuary Dialogue active",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (userPreferences.customGeminiApiKey.isNotBlank()) Color(0xFF2E7D32) else WarmGrey
-                                )
-                            }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp)
+                    ) {
+                        Text(
+                            text = "Appearance Mode",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Choose how Solace+ looks across your device.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Three mode options in horizontal row matching Solace+ design
+                        val currentMode = userPreferences.appearanceMode.lowercase()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            AppearanceOptionButton(
+                                label = "System",
+                                icon = Icons.Default.BrightnessAuto,
+                                isSelected = currentMode == "system" || (currentMode != "light" && currentMode != "dark"),
+                                onClick = { onSetAppearanceMode("system") },
+                                modifier = Modifier.weight(1f),
+                                testTag = "appearance_system_button"
+                            )
+
+                            AppearanceOptionButton(
+                                label = "Light",
+                                icon = Icons.Default.LightMode,
+                                isSelected = currentMode == "light",
+                                onClick = { onSetAppearanceMode("light") },
+                                modifier = Modifier.weight(1f),
+                                testTag = "appearance_light_button"
+                            )
+
+                            AppearanceOptionButton(
+                                label = "Dark",
+                                icon = Icons.Default.DarkMode,
+                                isSelected = currentMode == "dark",
+                                onClick = { onSetAppearanceMode("dark") },
+                                modifier = Modifier.weight(1f),
+                                testTag = "appearance_dark_button"
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        OutlinedTextField(
-                            value = apiKeyInput,
-                            onValueChange = { apiKeyInput = it },
-                            placeholder = { Text("Paste your Gemini API key here...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = moodColors.primary,
-                                unfocusedBorderColor = MutedBeige
-                            )
-                        )
+                        // Selected mode description banner
+                        val modeDescription = when (currentMode) {
+                            "dark" -> "Dark Mode — Deep, calm and easy on the eyes."
+                            "light" -> "Light Mode — Warm, soft and minimal."
+                            else -> "System Default — Follows your device settings."
+                        }
 
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = solaceColors.inputBackground,
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = if (apiKeySavedNotification) "✓ API Key Saved!" else "Free key at aistudio.google.com",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (apiKeySavedNotification) Color(0xFF2E7D32) else WarmGrey
-                            )
-
-                            Button(
-                                onClick = {
-                                    onSaveCustomGeminiApiKey(apiKeyInput.trim())
-                                    apiKeySavedNotification = true
-                                },
-                                shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = ButteryYellow,
-                                    contentColor = SoftCharcoal
-                                )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text("Save Key", fontWeight = FontWeight.Bold)
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(solaceColors.accent)
+                                )
+                                Text(
+                                    text = modeDescription,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
                             }
                         }
-                    }
-                }
-            }
 
-            // Atmosphere & Sanctuary Aesthetics
-            item {
-                SectionHeader(title = "Atmosphere & Aesthetics")
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Sanctuary Palette selection row
                         SettingsRow(
-                            icon = Icons.Default.Info,
+                            icon = Icons.Default.Palette,
                             title = "Sanctuary Palette",
                             subtitle = if (userPreferences.pinnedTheme == null) "Dynamic (Adapts to latest mood)" else "Pinned to ${userPreferences.pinnedTheme}",
                             onClick = { showThemeDialog = true },
                             testTag = "theme_palette_setting"
                         )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Night Sanctuary (Dark Mode)",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Deep obsidian & muted ceramic tones for nighttime rest",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = userPreferences.isDarkMode,
-                                onCheckedChange = { checked ->
-                                    onToggleDarkMode(checked)
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color(0xFF1E211A),
-                                    checkedTrackColor = moodColors.primary
-                                ),
-                                modifier = Modifier.testTag("dark_mode_switch")
-                            )
-                        }
                     }
                 }
             }
 
-            // Data & Safety Section
+            // Data Management & Support Section
             item {
                 SectionHeader(title = "Data Management & Support")
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                        SettingsRow(
-                            icon = Icons.Default.Share,
-                            title = "Export Sanctuary Reflections",
-                            subtitle = "Download all check-ins and journals as JSON",
-                            onClick = {
-                                coroutineScope.launch {
-                                    exportedJsonContent = onExportDataJson()
-                                    showExportDialog = true
-                                }
-                            },
-                            testTag = "export_data_setting"
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        )
-
                         SettingsRow(
                             icon = Icons.Default.Phone,
                             title = "24/7 Crisis Helplines",
@@ -740,7 +705,7 @@ fun SettingsScreen(
                     MoodType.entries.forEach { mood ->
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (userPreferences.pinnedTheme == mood.title) mood.bgTint else MaterialTheme.colorScheme.surface,
+                            color = if (userPreferences.pinnedTheme == mood.title) mood.getAdaptiveBgTint(solaceColors.isDark) else MaterialTheme.colorScheme.surface,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -778,56 +743,6 @@ fun SettingsScreen(
         )
     }
 
-    // Export Dialog
-    if (showExportDialog) {
-        AlertDialog(
-            onDismissRequest = { showExportDialog = false },
-            title = { Text("Exported Data", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text(
-                        text = "Your check-ins, journal reflections, and regulation history in standard JSON format:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                    ) {
-                        Text(
-                            text = exportedJsonContent,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .verticalScroll(rememberScrollState()),
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        clipboardManager.setText(AnnotatedString(exportedJsonContent))
-                        showExportDialog = false
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Copy to Clipboard")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExportDialog = false }) {
-                    Text("Close")
-                }
-            }
-        )
-    }
-
     // Clear Confirmation Dialog
     if (showClearConfirmDialog) {
         AlertDialog(
@@ -835,7 +750,7 @@ fun SettingsScreen(
             title = { Text("Reset Sanctuary?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    text = "This will permanently erase all mood entries, private journal entries, audio transcriptions, and chat reflections from this device. This action cannot be undone.",
+                    text = "This will permanently erase all mood entries, private journal entries, and chat reflections from this device. This action cannot be undone.",
                     style = MaterialTheme.typography.bodySmall
                 )
             },
@@ -1028,6 +943,63 @@ private fun SettingsRow(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppearanceOptionButton(
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    testTag: String = ""
+) {
+    val solaceColors = LocalSolaceColors.current
+    val bgColor by animateColorAsState(
+        targetValue = if (isSelected) solaceColors.accent else solaceColors.inputBackground,
+        animationSpec = tween(200),
+        label = "appearanceBg"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) solaceColors.onAccent else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(200),
+        label = "appearanceContent"
+    )
+    val borderColor = if (isSelected) solaceColors.accent else MaterialTheme.colorScheme.outlineVariant
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, borderColor),
+        shadowElevation = if (isSelected) 4.dp else 0.dp,
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .testTag(testTag)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = contentColor,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor,
+                textAlign = TextAlign.Center
             )
         }
     }

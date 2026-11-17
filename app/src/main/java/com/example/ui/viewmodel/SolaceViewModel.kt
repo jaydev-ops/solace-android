@@ -5,10 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.ai.ChatbotRole
-import com.example.data.ai.GeminiChatModel
-import com.example.data.ai.GeminiChatService
 import com.example.data.ai.SolaceAiService
-import com.example.data.audio.AudioRecorderHelper
 import com.example.data.local.SolaceDatabase
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.JournalEntryEntity
@@ -42,8 +39,6 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
     private val repository = SolaceRepository(database)
     private val firestoreRepository = FirestoreRepository(application)
     private val aiService = SolaceAiService()
-    private val geminiChatService = GeminiChatService()
-    private val audioRecorder = AudioRecorderHelper(application)
     private val auth: FirebaseAuth? = try {
         Firebase.auth
     } catch (e: Exception) {
@@ -74,7 +69,6 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
     override fun onCleared() {
         super.onCleared()
         auth?.removeAuthStateListener(authListener)
-        audioRecorder.cancelRecording()
     }
 
     private fun syncUserProfileToFirestore(user: FirebaseUser) {
@@ -87,6 +81,7 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
                     email = user.email,
                     pinnedTheme = currentPrefs.pinnedTheme,
                     isDarkMode = currentPrefs.isDarkMode,
+                    appearanceMode = currentPrefs.appearanceMode,
                     aiPersonalisationConsent = currentPrefs.aiPersonalisationConsent
                 )
                 firestoreRepository.saveUserProfile(profile)
@@ -164,77 +159,12 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
     private val _currentRegulationMode = MutableStateFlow(RegulationMode.LISTEN)
     val currentRegulationMode: StateFlow<RegulationMode> = _currentRegulationMode.asStateFlow()
 
-    // Gemini Chatbot Model & Role Selection
-    private val _selectedGeminiModel = MutableStateFlow(GeminiChatModel.FLASH)
-    val selectedGeminiModel: StateFlow<GeminiChatModel> = _selectedGeminiModel.asStateFlow()
-
+    // Chatbot Role Selection
     private val _selectedChatbotRole = MutableStateFlow(ChatbotRole.SANCTUARY_COMPANION)
     val selectedChatbotRole: StateFlow<ChatbotRole> = _selectedChatbotRole.asStateFlow()
 
-    fun selectGeminiModel(model: GeminiChatModel) {
-        _selectedGeminiModel.value = model
-    }
-
     fun selectChatbotRole(role: ChatbotRole) {
         _selectedChatbotRole.value = role
-    }
-
-    // Audio Transcription State
-    private val _isRecordingAudio = MutableStateFlow(false)
-    val isRecordingAudio: StateFlow<Boolean> = _isRecordingAudio.asStateFlow()
-
-    private val _isTranscribingAudio = MutableStateFlow(false)
-    val isTranscribingAudio: StateFlow<Boolean> = _isTranscribingAudio.asStateFlow()
-
-    private val _lastTranscribedText = MutableStateFlow<String?>(null)
-    val lastTranscribedText: StateFlow<String?> = _lastTranscribedText.asStateFlow()
-
-    fun startAudioRecording(): Boolean {
-        val started = audioRecorder.startRecording()
-        _isRecordingAudio.value = started
-        return started
-    }
-
-    fun stopAudioRecordingAndTranscribe(onSuccess: (String) -> Unit, onError: (String) -> Unit = {}) {
-        val result = audioRecorder.stopRecording()
-        _isRecordingAudio.value = false
-        if (result == null) {
-            onError("No audio recorded.")
-            return
-        }
-
-        viewModelScope.launch {
-            _isTranscribingAudio.value = true
-            try {
-                // Call Gemini 3.5 Transcribe
-                val transcript = geminiChatService.transcribeAudio(result.audioBytes, result.mimeType)
-                _lastTranscribedText.value = transcript
-
-                // Save to Firestore if user signed in
-                if (auth?.currentUser != null) {
-                    try {
-                        firestoreRepository.saveAudioTranscription(
-                            transcription = transcript,
-                            durationSeconds = result.durationSeconds,
-                            source = "microphone"
-                        )
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to persist audio transcription to Firestore", e)
-                    }
-                }
-                onSuccess(transcript)
-            } catch (e: Exception) {
-                Log.e(TAG, "Audio transcription failed", e)
-                onError(e.localizedMessage ?: "Transcription failed")
-            } finally {
-                _isTranscribingAudio.value = false
-            }
-        }
-    }
-
-    fun cancelAudioRecording() {
-        audioRecorder.cancelRecording()
-        _isRecordingAudio.value = false
     }
 
     // Regulation Sessions
@@ -349,7 +279,6 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
         if (userText.isBlank()) return
 
         val mode = _currentRegulationMode.value
-        val model = _selectedGeminiModel.value
         val role = _selectedChatbotRole.value
         val latest = latestMood.value
 
@@ -365,7 +294,7 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
                     firestoreRepository.saveChatMessage(
                         senderRole = "user",
                         content = userText,
-                        modelName = model.modelId,
+                        modelName = "solace-rule-based",
                         systemRole = role.id
                     )
                 } catch (e: Exception) {
@@ -386,7 +315,7 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
                         firestoreRepository.saveChatMessage(
                             senderRole = "model",
                             content = crisisMsg,
-                            modelName = model.modelId,
+                            modelName = "solace-rule-based",
                             systemRole = role.id
                         )
                     } catch (_: Exception) {}
@@ -408,12 +337,14 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
             } else null
 
             try {
-                geminiChatService.streamChatResponse(
-                    model = model,
-                    role = role,
-                    history = history,
-                    latestUserMessage = userText,
-                    contextAnchor = contextAnchor
+                aiService.streamResponse(
+                    userName = userPreferences.value.userName,
+                    currentMood = latest?.mood,
+                    moodIntensity = latest?.intensity,
+                    recentJournalSnippet = null,
+                    regulationMode = mode,
+                    conversationHistory = history,
+                    latestUserMessage = userText
                 ).collect { chunk ->
                     accumulated.append(chunk)
                     _streamingAiChunk.value = accumulated.toString()
@@ -443,7 +374,7 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
                         firestoreRepository.saveChatMessage(
                             senderRole = "model",
                             content = fullResponse,
-                            modelName = model.modelId,
+                            modelName = "solace-rule-based",
                             systemRole = role.id
                         )
                     } catch (e: Exception) {
@@ -451,7 +382,7 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Gemini chat generation failed", e)
+                Log.e(TAG, "Chat generation failed", e)
             } finally {
                 _isAiThinking.value = false
                 _streamingAiChunk.value = null
@@ -497,6 +428,15 @@ class SolaceViewModel(application: Application) : AndroidViewModel(application) 
     fun setPinnedTheme(pinnedMood: String?) {
         viewModelScope.launch {
             repository.setPinnedTheme(pinnedMood)
+            auth?.currentUser?.let { user ->
+                syncUserProfileToFirestore(user)
+            }
+        }
+    }
+
+    fun setAppearanceMode(mode: String) {
+        viewModelScope.launch {
+            repository.setAppearanceMode(mode)
             auth?.currentUser?.let { user ->
                 syncUserProfileToFirestore(user)
             }

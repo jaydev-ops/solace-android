@@ -59,6 +59,10 @@ enum class MoodType(
         bgTint = Color(0xFFEFF1F3)
     );
 
+    fun getAdaptiveBgTint(isDark: Boolean): Color {
+        return if (isDark) accentColor.copy(alpha = 0.22f) else bgTint
+    }
+
     val primaryColor: Color get() = accentColor
 
     companion object {

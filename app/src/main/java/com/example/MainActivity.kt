@@ -13,12 +13,11 @@ class MainActivity : ComponentActivity() {
     private val viewModel: SolaceViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         SolaceApplication.initFirebase(application)
         // Step 1: Configure App Check with launch intent before any UI or Firebase operations
         configureAppCheck(this, intent)
-
-        enableEdgeToEdge()
         setContent {
             SolaceApp(viewModel = viewModel)
         }

@@ -65,17 +65,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.ai.ChatbotRole
-import com.example.data.ai.GeminiChatModel
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.safety.RiskLevel
-import com.example.ui.components.AudioTranscriptionModal
 import com.example.ui.components.EmergencySupportCard
 import com.example.ui.components.SafetyScreeningSupportBanner
-import com.example.ui.theme.ButteryYellow
-import com.example.ui.theme.CreamWhite
 import com.example.ui.theme.LocalMoodColors
+import com.example.ui.theme.LocalSolaceColors
 import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
 import com.example.ui.theme.SoftButter
 import com.example.ui.theme.SoftCharcoal
 import com.example.ui.theme.WarmGrey
@@ -94,10 +90,7 @@ fun ChatScreen(
 ) {
     val messages by viewModel.messages.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-    val selectedModel by viewModel.selectedModel.collectAsState()
     val selectedRole by viewModel.selectedRole.collectAsState()
-    val isRecordingAudio by viewModel.isRecordingAudio.collectAsState()
-    val isTranscribingAudio by viewModel.isTranscribingAudio.collectAsState()
     val userPreferences by viewModel.userPreferences.collectAsState()
 
     val currentHour = remember {
@@ -121,11 +114,11 @@ fun ChatScreen(
     }
 
     var inputText by remember { mutableStateOf("") }
-    var showAudioModal by remember { mutableStateOf(false) }
     var showEmergencySheet by remember { mutableStateOf(false) }
     val riskState by viewModel.riskState.collectAsState()
     val listState = rememberLazyListState()
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
     val isImeVisible = WindowInsets.isImeVisible
 
     // Auto-scroll when new messages arrive, when streaming, or when keyboard opens
@@ -150,7 +143,7 @@ fun ChatScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "Gemini AI Chat",
+                                text = "Solace AI",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -162,7 +155,7 @@ fun ChatScreen(
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = selectedModel.modelId,
+                                    text = "SANCTUARY",
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = SoftCharcoal
@@ -170,7 +163,7 @@ fun ChatScreen(
                             }
                         }
                         Text(
-                            text = "Role: ${selectedRole.title}",
+                            text = "Holding Presence • Safe & Rule-Based",
                             style = MaterialTheme.typography.bodySmall,
                             color = WarmGrey,
                             fontSize = 11.sp
@@ -215,62 +208,12 @@ fun ChatScreen(
                 .padding(paddingValues)
                 .imePadding()
         ) {
-            // Model Selector Strip
+            // Chatbot System Role Strip
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
-                Text(
-                    text = "Gemini Model Engine",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = WarmGrey
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
-                ) {
-                    items(GeminiChatModel.entries) { model ->
-                        val isSelected = model == selectedModel
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = if (isSelected) ButteryYellow else CreamWhite,
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                if (isSelected) SoftCharcoal.copy(alpha = 0.3f) else MutedBeige
-                            ),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .clickable { viewModel.selectModel(model) }
-                                .testTag("chat_model_${model.name.lowercase()}")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isSelected) moodColors.primary else WarmGrey)
-                                )
-                                Text(
-                                    text = model.displayName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = SoftCharcoal
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Chatbot System Role Strip
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     contentPadding = PaddingValues(vertical = 2.dp)
@@ -279,10 +222,10 @@ fun ChatScreen(
                         val isSelected = role == selectedRole
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) SoftButter else CreamWhite,
+                            color = if (isSelected) solaceColors.accent else solaceColors.cardHighlight,
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                if (isSelected) moodColors.primary else MutedBeige
+                                if (isSelected) solaceColors.accent else solaceColors.border
                             ),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
@@ -302,14 +245,14 @@ fun ChatScreen(
                                         ChatbotRole.WISDOM_MIRROR -> Icons.Default.AutoAwesome
                                     },
                                     contentDescription = null,
-                                    tint = if (isSelected) moodColors.primary else WarmGrey,
+                                    tint = if (isSelected) solaceColors.onAccent else moodColors.primary,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
                                     text = role.title,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontSize = 11.sp,
-                                    color = SoftCharcoal
+                                    color = if (isSelected) solaceColors.onAccent else solaceColors.primaryText
                                 )
                             }
                         }
@@ -335,7 +278,8 @@ fun ChatScreen(
                                 .fillMaxWidth()
                                 .padding(vertical = 16.dp),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = PaleVanilla)
+                            colors = CardDefaults.cardColors(containerColor = solaceColors.cardHighlight),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, solaceColors.border)
                         ) {
                             Column(
                                 modifier = Modifier.padding(20.dp),
@@ -352,13 +296,13 @@ fun ChatScreen(
                                     text = greetingHeading,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = SoftCharcoal
+                                    color = solaceColors.primaryText
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = "Welcome to your solace AI sanctuary. Send a message or tap the microphone to begin a new conversation.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = WarmGrey,
+                                    color = solaceColors.secondaryText,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     lineHeight = 20.sp
                                 )
@@ -396,7 +340,7 @@ fun ChatScreen(
                     item {
                         StreamingMessageBubble(
                             text = partial,
-                            modelName = selectedModel.displayName
+                            modelName = "Solace AI"
                         )
                     }
                 }
@@ -415,7 +359,7 @@ fun ChatScreen(
                                 color = moodColors.primary
                             )
                             Text(
-                                text = "Gemini is reflecting...",
+                                text = "Solace is reflecting...",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = WarmGrey,
                                 fontSize = 12.sp
@@ -458,33 +402,14 @@ fun ChatScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Microphone Voice Input
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(if (isRecordingAudio) moodColors.primary else PaleVanilla)
-                            .border(1.dp, MutedBeige, CircleShape)
-                            .clickable { showAudioModal = true }
-                            .testTag("chat_mic_button"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "Voice Input",
-                            tint = if (isRecordingAudio) Color.White else SoftCharcoal,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
                     OutlinedTextField(
                         value = inputText,
                         onValueChange = { inputText = it },
                         placeholder = {
                             Text(
-                                text = "Type a message to Gemini AI...",
+                                text = "Type a message to Solace AI...",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = WarmGrey.copy(alpha = 0.7f)
+                                color = solaceColors.secondaryText.copy(alpha = 0.7f)
                             )
                         },
                         modifier = Modifier
@@ -493,10 +418,12 @@ fun ChatScreen(
                             .testTag("chat_input_field"),
                         shape = RoundedCornerShape(26.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = PaleVanilla,
-                            unfocusedContainerColor = PaleVanilla,
+                            focusedContainerColor = solaceColors.inputBackground,
+                            unfocusedContainerColor = solaceColors.inputBackground,
                             focusedBorderColor = moodColors.primary,
-                            unfocusedBorderColor = MutedBeige
+                            unfocusedBorderColor = solaceColors.border,
+                            focusedTextColor = solaceColors.primaryText,
+                            unfocusedTextColor = solaceColors.primaryText
                         ),
                         maxLines = 3,
                         singleLine = true
@@ -513,35 +440,19 @@ fun ChatScreen(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(if (inputText.isNotBlank()) ButteryYellow else MutedBeige)
+                            .background(if (inputText.isNotBlank()) solaceColors.accent else solaceColors.border)
                             .testTag("chat_send_button")
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send Message",
-                            tint = if (inputText.isNotBlank()) SoftCharcoal else WarmGrey,
+                            tint = if (inputText.isNotBlank()) solaceColors.onAccent else solaceColors.secondaryText,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
         }
-    }
-
-    if (showAudioModal) {
-        AudioTranscriptionModal(
-            isRecording = isRecordingAudio,
-            isTranscribing = isTranscribingAudio,
-            onStartRecording = { viewModel.startAudioRecording() },
-            onStopRecordingAndTranscribe = { onSuccess, onError ->
-                viewModel.stopAudioRecordingAndTranscribe(onSuccess, onError)
-            },
-            onCancelRecording = { viewModel.cancelAudioRecording() },
-            onUseTranscription = { transcript ->
-                inputText = transcript
-            },
-            onDismiss = { showAudioModal = false }
-        )
     }
 
     if (showEmergencySheet) {
@@ -558,6 +469,7 @@ fun ChatScreen(
 private fun ChatMessageBubble(message: ChatMessageEntity) {
     val isUser = message.senderRole == "user"
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
     val formattedTime = remember(message.timestamp) {
         SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(message.timestamp))
     }
@@ -581,23 +493,23 @@ private fun ChatMessageBubble(message: ChatMessageEntity) {
                     modifier = Modifier.size(12.dp)
                 )
                 Text(
-                    text = "Gemini",
+                    text = "Solace AI",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = SoftCharcoal
+                    color = solaceColors.secondaryText
                 )
             }
             Text(
                 text = formattedTime,
                 fontSize = 10.sp,
-                color = WarmGrey
+                color = solaceColors.secondaryText
             )
             if (isUser) {
                 Text(
                     text = "You",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = SoftCharcoal
+                    color = solaceColors.secondaryText
                 )
             }
         }
@@ -613,10 +525,10 @@ private fun ChatMessageBubble(message: ChatMessageEntity) {
                         bottomEnd = if (isUser) 4.dp else 18.dp
                     )
                 )
-                .background(if (isUser) ButteryYellow else CreamWhite)
+                .background(if (isUser) solaceColors.accent else solaceColors.cardHighlight)
                 .border(
                     1.dp,
-                    if (isUser) SoftCharcoal.copy(alpha = 0.15f) else MutedBeige,
+                    if (isUser) Color.Transparent else solaceColors.border,
                     RoundedCornerShape(
                         topStart = 18.dp,
                         topEnd = 18.dp,
@@ -629,7 +541,7 @@ private fun ChatMessageBubble(message: ChatMessageEntity) {
             Text(
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium,
-                color = SoftCharcoal,
+                color = if (isUser) solaceColors.onAccent else solaceColors.primaryText,
                 lineHeight = 20.sp
             )
         }
@@ -639,6 +551,7 @@ private fun ChatMessageBubble(message: ChatMessageEntity) {
 @Composable
 private fun StreamingMessageBubble(text: String, modelName: String) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -660,7 +573,7 @@ private fun StreamingMessageBubble(text: String, modelName: String) {
                 text = "$modelName (streaming)",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = SoftCharcoal
+                color = solaceColors.secondaryText
             )
         }
 
@@ -675,14 +588,14 @@ private fun StreamingMessageBubble(text: String, modelName: String) {
                         bottomEnd = 18.dp
                     )
                 )
-                .background(CreamWhite)
+                .background(solaceColors.cardHighlight)
                 .border(1.dp, moodColors.primary.copy(alpha = 0.5f), RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp))
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = SoftCharcoal,
+                color = solaceColors.primaryText,
                 lineHeight = 20.sp
             )
         }

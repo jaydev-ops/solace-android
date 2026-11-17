@@ -13,11 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -63,22 +67,54 @@ fun SolaceApp(
     val currentRegulationMode by viewModel.currentRegulationMode.collectAsState()
 
     val currentUser by viewModel.currentUser.collectAsState()
-    val selectedGeminiModel by viewModel.selectedGeminiModel.collectAsState()
     val selectedChatbotRole by viewModel.selectedChatbotRole.collectAsState()
-    val isRecordingAudio by viewModel.isRecordingAudio.collectAsState()
-    val isTranscribingAudio by viewModel.isTranscribingAudio.collectAsState()
 
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
+    val screenSaver = remember {
+        Saver<Screen, String>(
+            save = { it.route },
+            restore = { Screen.fromRoute(it) }
+        )
+    }
+    var currentScreen by rememberSaveable(stateSaver = screenSaver) {
+        mutableStateOf(Screen.Home)
+    }
+
+    LaunchedEffect(userPreferences.isLoggedIn) {
+        if (!userPreferences.isLoggedIn) {
+            if (currentScreen != Screen.Auth) {
+                currentScreen = Screen.Auth
+            }
+        } else if (currentScreen == Screen.Auth) {
+            currentScreen = Screen.Home
+        }
+    }
+
     var selectedRegulationActivityId by remember { mutableStateOf<String?>("box_breathing") }
+    var selectedJournalEntryId by remember { mutableStateOf<Long?>(null) }
 
-    // Sub-screen Back navigation
-    BackHandler(enabled = currentScreen != Screen.Home) {
+    // Sub-screen Back navigation (handles open journal note before screen switching)
+    BackHandler(enabled = currentScreen == Screen.Journal && selectedJournalEntryId != null) {
+        selectedJournalEntryId = null
+    }
+
+    BackHandler(
+        enabled = currentScreen != Screen.Home &&
+            !(currentScreen == Screen.Journal && selectedJournalEntryId != null) &&
+            !(currentScreen == Screen.Auth && !userPreferences.isLoggedIn)
+    ) {
         currentScreen = Screen.Home
+    }
+
+    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isEffectiveDark = when (userPreferences.appearanceMode.lowercase()) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemDark
     }
 
     SolaceTheme(
         activeMood = activeMoodTheme,
-        darkTheme = userPreferences.isDarkMode
+        darkTheme = isEffectiveDark
     ) {
         val moodColors = LocalMoodColors.current
 
@@ -209,8 +245,13 @@ fun SolaceApp(
                                     },
                                     onDeleteEntry = { id ->
                                         viewModel.deleteJournal(id)
+                                        if (selectedJournalEntryId == id) {
+                                            selectedJournalEntryId = null
+                                        }
                                     },
-                                    onOpenSettings = { currentScreen = Screen.Settings }
+                                    onOpenSettings = { currentScreen = Screen.Settings },
+                                    selectedEntryId = selectedJournalEntryId,
+                                    onSelectEntry = { id -> selectedJournalEntryId = id }
                                 )
                             }
 
@@ -245,6 +286,9 @@ fun SolaceApp(
                                     },
                                     onUpdatePinnedTheme = { pinned ->
                                         viewModel.setPinnedTheme(pinned)
+                                    },
+                                    onSetAppearanceMode = { mode ->
+                                        viewModel.setAppearanceMode(mode)
                                     },
                                     onToggleDarkMode = { isDark ->
                                         viewModel.toggleDarkMode(isDark)
@@ -284,6 +328,7 @@ fun SolaceApp(
                                             onSignOutComplete = { /* updated via AuthListener */ },
                                             scope = coroutineScope
                                         )
+                                        currentScreen = Screen.Auth
                                     },
                                     onNavigateToAuth = { currentScreen = Screen.Auth },
                                     onDeleteAccount = {

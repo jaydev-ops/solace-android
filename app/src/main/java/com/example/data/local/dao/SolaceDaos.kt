@@ -9,6 +9,7 @@ import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.JournalEntryEntity
 import com.example.data.local.entity.MoodEntryEntity
 import com.example.data.local.entity.RegulationSessionEntity
+import com.example.data.local.entity.SafetyStateEntity
 import com.example.data.local.entity.UserAccountEntity
 import com.example.data.local.entity.UserPreferencesEntity
 import kotlinx.coroutines.flow.Flow
@@ -36,10 +37,10 @@ interface MoodDao {
 
 @Dao
 interface JournalDao {
-    @Query("SELECT * FROM journal_entries WHERE isDeleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM journal_entries WHERE isDeleted = 0 ORDER BY createdAt DESC")
     fun getAllActiveEntries(): Flow<List<JournalEntryEntity>>
 
-    @Query("SELECT * FROM journal_entries WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM journal_entries WHERE id = :id AND isDeleted = 0 LIMIT 1")
     fun getEntryById(id: Long): Flow<JournalEntryEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -74,6 +75,21 @@ interface ChatDao {
 
     @Query("DELETE FROM chat_messages")
     suspend fun clearChatHistory()
+}
+
+@Dao
+interface SafetyDao {
+    @Query("SELECT * FROM safety_states WHERE conversationId = :conversationId LIMIT 1")
+    fun getSafetyState(conversationId: String = "active_session"): Flow<SafetyStateEntity?>
+
+    @Query("SELECT * FROM safety_states WHERE conversationId = :conversationId LIMIT 1")
+    suspend fun getSafetyStateSync(conversationId: String = "active_session"): SafetyStateEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSafetyState(state: SafetyStateEntity)
+
+    @Query("DELETE FROM safety_states WHERE conversationId = :conversationId")
+    suspend fun clearSafetyState(conversationId: String = "active_session")
 }
 
 @Dao

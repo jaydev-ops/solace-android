@@ -9,12 +9,14 @@ import com.example.data.local.dao.ChatDao
 import com.example.data.local.dao.JournalDao
 import com.example.data.local.dao.MoodDao
 import com.example.data.local.dao.RegulationDao
+import com.example.data.local.dao.SafetyDao
 import com.example.data.local.dao.UserAccountDao
 import com.example.data.local.dao.UserPreferencesDao
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.JournalEntryEntity
 import com.example.data.local.entity.MoodEntryEntity
 import com.example.data.local.entity.RegulationSessionEntity
+import com.example.data.local.entity.SafetyStateEntity
 import com.example.data.local.entity.UserAccountEntity
 import com.example.data.local.entity.UserPreferencesEntity
 import kotlinx.coroutines.CoroutineScope
@@ -26,22 +28,111 @@ import kotlinx.coroutines.launch
         MoodEntryEntity::class,
         JournalEntryEntity::class,
         ChatMessageEntity::class,
+        SafetyStateEntity::class,
         RegulationSessionEntity::class,
         UserPreferencesEntity::class,
         UserAccountEntity::class
     ],
-    version = 2,
+    version = 6,
     exportSchema = false
 )
 abstract class SolaceDatabase : RoomDatabase() {
     abstract fun moodDao(): MoodDao
     abstract fun journalDao(): JournalDao
     abstract fun chatDao(): ChatDao
+    abstract fun safetyDao(): SafetyDao
     abstract fun regulationDao(): RegulationDao
     abstract fun userPreferencesDao(): UserPreferencesDao
     abstract fun userAccountDao(): UserAccountDao
 
     companion object {
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `user_accounts` (`email` TEXT NOT NULL, `displayName` TEXT NOT NULL, `passwordHash` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`email`))")
+                } catch (e: Exception) {
+                    android.util.Log.w("SolaceDatabase", "MIGRATION_1_2 warning: ${e.message}")
+                }
+            }
+        }
+
+        val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE user_preferences ADD COLUMN appearanceMode TEXT NOT NULL DEFAULT 'system'")
+                } catch (e: Exception) {
+                    android.util.Log.w("SolaceDatabase", "MIGRATION_2_3 warning: ${e.message}")
+                }
+            }
+        }
+
+        val MIGRATION_1_3 = object : androidx.room.migration.Migration(1, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `user_accounts` (`email` TEXT NOT NULL, `displayName` TEXT NOT NULL, `passwordHash` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`email`))")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE user_preferences ADD COLUMN appearanceMode TEXT NOT NULL DEFAULT 'system'")
+                } catch (_: Exception) {}
+            }
+        }
+
+        val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `safety_states` (`conversationId` TEXT NOT NULL, `currentLevel` TEXT NOT NULL, `highestLevel` TEXT NOT NULL, `conversationState` TEXT NOT NULL, `unresolvedSafetyConcern` INTEGER NOT NULL, `emergencyTriggered` INTEGER NOT NULL, `lastAssessment` TEXT NOT NULL, `lastScreeningQuestionAsked` TEXT, `awaitingScreeningAnswer` INTEGER NOT NULL, `turnCount` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`conversationId`))")
+                } catch (e: Exception) {
+                    android.util.Log.w("SolaceDatabase", "MIGRATION_3_4 safety_states: ${e.message}")
+                }
+                try {
+                    db.execSQL("ALTER TABLE chat_messages ADD COLUMN riskLevel TEXT DEFAULT NULL")
+                } catch (e: Exception) {
+                    android.util.Log.w("SolaceDatabase", "MIGRATION_3_4 chat_messages: ${e.message}")
+                }
+            }
+        }
+
+        val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN helpRecommended INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN humanSupportContacted INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN safetyConfirmed INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN lastConfirmationType TEXT DEFAULT NULL")
+                } catch (_: Exception) {}
+            }
+        }
+
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN pendingQuestionId TEXT DEFAULT NULL")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN lastAnsweredQuestionId TEXT DEFAULT NULL")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN lastAnswer TEXT DEFAULT NULL")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE safety_states ADD COLUMN questionAnswersJson TEXT NOT NULL DEFAULT ''")
+                } catch (_: Exception) {}
+            }
+        }
+
+        val MIGRATION_4_6 = object : androidx.room.migration.Migration(4, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_4_5.migrate(db)
+                MIGRATION_5_6.migrate(db)
+            }
+        }
+
         @Volatile
         private var INSTANCE: SolaceDatabase? = null
 
@@ -52,17 +143,23 @@ abstract class SolaceDatabase : RoomDatabase() {
                     SolaceDatabase::class.java,
                     "solace_sanctuary.db"
                 )
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_1_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_4_6)
+                .fallbackToDestructiveMigration(dropAllTables = true)
+                .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 .addCallback(object : Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
                         CoroutineScope(Dispatchers.IO).launch {
-                            INSTANCE?.let { database ->
-                                populateInitialData(database)
+                            try {
+                                INSTANCE?.let { database ->
+                                    populateInitialData(database)
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("SolaceDatabase", "Failed to populate initial data: ${e.message}")
                             }
                         }
                     }
                 })
-                .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 INSTANCE = instance
                 instance
@@ -80,6 +177,7 @@ abstract class SolaceDatabase : RoomDatabase() {
                     userName = "Sanctuary",
                     pinnedTheme = null,
                     isDarkMode = false,
+                    appearanceMode = "system",
                     reducedMotion = false,
                     aiPersonalisationConsent = true
                 )

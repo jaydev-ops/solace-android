@@ -49,7 +49,6 @@ import com.example.navigation.Screen
 import com.example.ui.theme.ButteryYellow
 import com.example.ui.theme.LocalMoodColors
 import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
 import com.example.ui.theme.SoftButter
 import com.example.ui.theme.SoftCharcoal
 import com.example.ui.theme.SubtleOutline
@@ -104,12 +103,14 @@ fun SolaceTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = WarmGrey
-                )
+            if (subtitle.isNotBlank()) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = WarmGrey
+                    )
+                }
             }
 
             // User Avatar
@@ -147,7 +148,7 @@ fun SolaceBottomNav(
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
         tonalElevation = 0.dp,
         shadowElevation = 10.dp,
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, SubtleOutline.copy(alpha = 0.6f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -201,9 +202,8 @@ private fun NavItem(
     unselectedIcon: ImageVector,
     onClick: () -> Unit
 ) {
-    val moodColors = LocalMoodColors.current
     val contentColor by animateColorAsState(
-        targetValue = if (selected) moodColors.primary else WarmGrey,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(200),
         label = "navColor"
     )
@@ -238,11 +238,13 @@ private fun SolaceAiNavItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val solaceColors = com.example.ui.theme.LocalSolaceColors.current
     val bgColor by animateColorAsState(
-        targetValue = if (selected) ButteryYellow else PaleVanilla,
+        targetValue = if (selected) solaceColors.accent else solaceColors.inputBackground,
         animationSpec = tween(200),
         label = "aiNavBg"
     )
+    val contentColor = if (selected) solaceColors.onAccent else MaterialTheme.colorScheme.onSurface
 
     Column(
         modifier = Modifier
@@ -250,7 +252,7 @@ private fun SolaceAiNavItem(
             .background(bgColor)
             .border(
                 width = 1.dp,
-                color = if (selected) SoftCharcoal.copy(alpha = 0.25f) else MutedBeige,
+                color = if (selected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable(onClick = onClick)
@@ -261,7 +263,7 @@ private fun SolaceAiNavItem(
         Icon(
             imageVector = Icons.Filled.AutoAwesome,
             contentDescription = "solace AI",
-            tint = SoftCharcoal,
+            tint = contentColor,
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
@@ -269,7 +271,7 @@ private fun SolaceAiNavItem(
             text = "solace AI",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = SoftCharcoal,
+            color = contentColor,
             fontSize = 11.sp
         )
     }
@@ -282,6 +284,7 @@ fun AmbientSanctuaryCanvas(
     content: @Composable () -> Unit
 ) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = com.example.ui.theme.LocalSolaceColors.current
     val ambientColor by animateColorAsState(
         targetValue = moodColors.ambientGlow,
         animationSpec = tween(500),
@@ -293,15 +296,25 @@ fun AmbientSanctuaryCanvas(
         label = "highlightColor"
     )
 
+    val gradientColors = if (solaceColors.isDark) {
+        listOf(
+            ambientColor.copy(alpha = 0.45f),
+            solaceColors.secondaryBackground,
+            solaceColors.mainBackground
+        )
+    } else {
+        listOf(
+            ambientColor.copy(alpha = 0.75f),
+            highlightColor.copy(alpha = 0.45f),
+            solaceColors.mainBackground
+        )
+    }
+
     Box(
         modifier = modifier
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
-                        ambientColor.copy(alpha = 0.75f),
-                        highlightColor.copy(alpha = 0.45f),
-                        MaterialTheme.colorScheme.background
-                    )
+                    colors = gradientColors
                 )
             )
     ) {
@@ -314,7 +327,8 @@ fun MoodPillBadge(
     moodName: String,
     modifier: Modifier = Modifier
 ) {
-    val moodColors = com.example.ui.theme.getMoodTokens(moodName)
+    val isDark = com.example.ui.theme.LocalSolaceColors.current.isDark
+    val moodColors = com.example.ui.theme.getMoodTokens(moodName, isDark)
     Row(
         modifier = modifier
             .clip(CircleShape)

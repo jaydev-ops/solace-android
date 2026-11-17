@@ -107,41 +107,7 @@ class SolaceAiService {
             return@flow
         }
 
-        val effectiveKey = resolveApiKey(customApiKey)
-
-        // 2. If valid API key available, attempt direct Google Gemini REST call
-        if (effectiveKey.isNotBlank()) {
-            try {
-                val fullText = withContext(Dispatchers.IO) {
-                    callGeminiRestApi(
-                        apiKey = effectiveKey,
-                        userName = userName,
-                        currentMood = currentMood,
-                        moodIntensity = moodIntensity,
-                        recentJournalSnippet = recentJournalSnippet,
-                        regulationMode = regulationMode,
-                        conversationHistory = conversationHistory,
-                        latestUserMessage = latestUserMessage
-                    )
-                }
-
-                if (fullText.isNotBlank()) {
-                    // Stream in soft, natural word chunks for serene typing cadence
-                    val words = fullText.split(" ")
-                    val chunkSize = 3
-                    for (i in words.indices step chunkSize) {
-                        val chunk = words.subList(i, minOf(i + chunkSize, words.size)).joinToString(" ") + " "
-                        emit(chunk)
-                        delay(40)
-                    }
-                    return@flow
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Gemini REST API failed, transitioning smoothly to Adaptive Sanctuary Engine: ${e.message}")
-            }
-        }
-
-        // 3. Adaptive Local Sanctuary Dialogue Engine
+        // 2. Adaptive Local Sanctuary Dialogue Engine (100% Rule-Based & Offline)
         val localResponse = generateAdaptiveSanctuaryResponse(
             userName = userName,
             currentMood = currentMood,
@@ -184,25 +150,7 @@ class SolaceAiService {
             return@withContext assessment.overrideResponse
         }
 
-        val key = resolveApiKey(customApiKey)
-        if (key.isNotBlank()) {
-            try {
-                return@withContext callGeminiRestApi(
-                    apiKey = key,
-                    userName = userName,
-                    currentMood = currentMood,
-                    moodIntensity = moodIntensity,
-                    recentJournalSnippet = recentJournalSnippet,
-                    regulationMode = regulationMode,
-                    conversationHistory = conversationHistory,
-                    latestUserMessage = latestUserMessage
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "Gemini call failed, using adaptive sanctuary engine", e)
-            }
-        }
-
-        delay(400)
+        delay(300)
         return@withContext generateAdaptiveSanctuaryResponse(
             userName = userName,
             currentMood = currentMood,

@@ -1,19 +1,48 @@
 package com.example.data.safety
 
+/**
+ * Deterministic IF-ELSE Risk Decision Engine for Solace+.
+ *
+ * CRITICAL SAFETY INVARIANT:
+ * Highest-risk conditions are ALWAYS evaluated first.
+ * Probabilistic LLM outputs or keyword absences can NEVER override or downgrade safety.
+ */
 object RiskDecisionEngine {
 
     /**
-     * Deterministic, rule-based risk evaluation using explicit IF-ELSE priority logic.
-     * Highest-risk conditions are ALWAYS evaluated first.
+     * Primary deterministic risk evaluation taking signals and full conversation context.
      */
-    fun determineRisk(signals: RiskSignals, context: RiskState? = null): RiskLevel {
-        // 0. Filter out non-suicidal figurative expressions and fictional contexts
-        if (signals.isFigurative || signals.isFictionalOrHypothetical) {
+    fun determineRisk(
+        signals: RiskSignals,
+        context: ConversationContext
+    ): RiskLevel {
+        return evaluateDeterministicRules(signals, context.currentState)
+    }
+
+    /**
+     * Overload taking signals and optional RiskState for backward compatibility.
+     */
+    fun determineRisk(
+        signals: RiskSignals,
+        context: RiskState? = null
+    ): RiskLevel {
+        return evaluateDeterministicRules(signals, context)
+    }
+
+    private fun evaluateDeterministicRules(
+        signals: RiskSignals,
+        state: RiskState?
+    ): RiskLevel {
+        // 0. Filter out non-suicidal figurative idioms and fictional contexts
+        // Unless combined with contradictory high-risk signals (e.g. actual attempt or explicit plan)
+        if ((signals.isFigurative || signals.isFictionalOrHypothetical || signals.isQuotedOrThirdParty) &&
+            !signals.recentAttempt && !signals.currentSuicidalIntent && !signals.imminentPlan
+        ) {
             return RiskLevel.LEVEL_0_NORMAL
         }
 
         // 1. LEVEL 4: Immediate danger / Emergency
-        // Prioritized above all else
+        // Prioritized above all other conditions
         if (
             signals.recentAttempt ||
             signals.currentSuicidalIntent ||
@@ -29,19 +58,25 @@ object RiskDecisionEngine {
             !signals.negated && (
                 signals.activeSuicidalThoughts ||
                 signals.passiveDeathWish ||
-                signals.recurrentDeathThoughts
+                signals.recurrentDeathThoughts ||
+                signals.desireToDisappear ||
+                signals.notWantingToExist
             )
         ) {
             return RiskLevel.LEVEL_3_SUICIDAL_IDEATION
         }
 
-        // 3. LEVEL 2: Significant psychological distress & warning signals
+        // 3. LEVEL 2: Significant psychological distress & clinical warning signals
         else if (
+            signals.selfHarmOnly ||
             signals.persistentHopelessness ||
             signals.worthlessness ||
             signals.perceivedBurdensomeness ||
             signals.persistentDespair ||
             signals.futurelessness ||
+            signals.lossOfPurpose ||
+            signals.persistentEmotionalNumbness ||
+            signals.beliefNothingWillImprove ||
             signals.needsClarification
         ) {
             return RiskLevel.LEVEL_2_ELEVATED
@@ -54,7 +89,8 @@ object RiskDecisionEngine {
             signals.loneliness ||
             signals.stress ||
             signals.emotionalExhaustion ||
-            signals.frustration
+            signals.frustration ||
+            signals.temporaryHopelessness
         ) {
             return RiskLevel.LEVEL_1_DISTRESS
         }
@@ -65,4 +101,3 @@ object RiskDecisionEngine {
         }
     }
 }
-

@@ -62,10 +62,9 @@ import com.example.data.model.MoodType
 import com.example.navigation.Screen
 import com.example.ui.components.SolaceTopBar
 import com.example.ui.theme.ButteryYellow
-import com.example.ui.theme.CreamWhite
 import com.example.ui.theme.LocalMoodColors
+import com.example.ui.theme.LocalSolaceColors
 import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
 import com.example.ui.theme.SoftButter
 import com.example.ui.theme.SoftCharcoal
 import com.example.ui.theme.SubtleOutline
@@ -141,6 +140,7 @@ fun HomeScreen(
     onQuickMoodPreview: ((String) -> Unit)? = null
 ) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
     val todayFormatted = remember {
         SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(Date())
     }
@@ -195,7 +195,7 @@ fun HomeScreen(
             .testTag("home_screen")
     ) {
         SolaceTopBar(
-            subtitle = "peaceful haven",
+            subtitle = "",
             userName = topBarTitle,
             onAvatarClick = onOpenSettings
         )
@@ -258,7 +258,7 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .height(180.dp),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = CreamWhite),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -435,7 +435,7 @@ fun HomeScreen(
                                 Text(
                                     text = "Selected: ${selectedQuickMood.title} • Glowing gently",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = SoftCharcoal
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
@@ -543,11 +543,11 @@ fun HomeScreen(
                                             .size(28.dp)
                                             .clip(CircleShape)
                                             .background(
-                                                item.mood?.bgTint ?: PaleVanilla
+                                                item.mood?.getAdaptiveBgTint(solaceColors.isDark) ?: solaceColors.inputBackground
                                             )
                                             .border(
                                                 width = if (item.isToday) 1.5.dp else 1.dp,
-                                                color = if (item.isToday) moodColors.primary else (item.mood?.accentColor?.copy(alpha = 0.6f) ?: MutedBeige),
+                                                color = if (item.isToday) moodColors.primary else (item.mood?.accentColor?.copy(alpha = 0.6f) ?: solaceColors.border),
                                                 shape = CircleShape
                                             ),
                                         contentAlignment = Alignment.Center
@@ -626,8 +626,8 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(PaleVanilla)
-                                .border(1.dp, MutedBeige, RoundedCornerShape(16.dp))
+                                .background(solaceColors.inputBackground)
+                                .border(1.dp, solaceColors.border, RoundedCornerShape(16.dp))
                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
@@ -635,7 +635,7 @@ fun HomeScreen(
                             Text(
                                 text = "Write your unhurried thoughts...",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = WarmGrey
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
@@ -653,8 +653,8 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaleVanilla),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(SoftButter, MutedBeige)))
+                    colors = CardDefaults.cardColors(containerColor = solaceColors.cardHighlight),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(solaceColors.border, solaceColors.subtleBorder)))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(
@@ -665,13 +665,13 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(ButteryYellow),
+                                    .background(solaceColors.accent),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.AutoAwesome,
                                     contentDescription = null,
-                                    tint = SoftCharcoal,
+                                    tint = solaceColors.onAccent,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -680,7 +680,7 @@ fun HomeScreen(
                                     text = "YOUR SANCTUARY COMPANION",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = SoftCharcoal,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 0.5.sp
                                 )
                                 Text(
@@ -697,7 +697,7 @@ fun HomeScreen(
                         Text(
                             text = "solace AI is here whenever you need a peaceful, non-judgmental ear to unpack thoughts or untangle feelings.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SoftCharcoal.copy(alpha = 0.85f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 18.sp
                         )
 
@@ -711,12 +711,12 @@ fun HomeScreen(
                             Button(
                                 onClick = { onNavigate(Screen.Companion) },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .fillMaxWidth()
                                     .height(52.dp),
                                 shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = ButteryYellow,
-                                    contentColor = SoftCharcoal
+                                    containerColor = solaceColors.accent,
+                                    contentColor = solaceColors.onAccent
                                 )
                             ) {
                                 Text(
@@ -729,23 +729,6 @@ fun HomeScreen(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp)
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(CircleShape)
-                                    .background(CreamWhite)
-                                    .border(1.dp, MutedBeige, CircleShape)
-                                    .clickable { onNavigate(Screen.Companion) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Mic,
-                                    contentDescription = "Voice reflection",
-                                    tint = SoftCharcoal,
-                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -816,8 +799,9 @@ private fun QuickMoodChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val borderColor = if (selected) mood.accentColor else MutedBeige
-    val bgColor = if (selected) mood.bgTint else CreamWhite
+    val solaceColors = LocalSolaceColors.current
+    val borderColor = if (selected) mood.accentColor else solaceColors.border
+    val bgColor = if (selected) mood.getAdaptiveBgTint(solaceColors.isDark) else MaterialTheme.colorScheme.surface
 
     Column(
         modifier = modifier

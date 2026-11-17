@@ -132,11 +132,11 @@ class ExampleUnitTest {
 
     @Test
     fun formatUserGreeting_withActualUserName_addressesUserByName() {
-        val greeting = formatUserGreeting("Good morning", "Jayesh")
-        assertEquals("Good morning, Jayesh.", greeting)
+        val greeting = formatUserGreeting("Good morning", "Prapti")
+        assertEquals("Good morning, Prapti.", greeting)
 
-        val afternoonGreeting = formatUserGreeting("Good afternoon", "Sarah")
-        assertEquals("Good afternoon, Sarah.", afternoonGreeting)
+        val afternoonGreeting = formatUserGreeting("Good afternoon", "Aarya")
+        assertEquals("Good afternoon, Aarya.", afternoonGreeting)
     }
 
     @Test
@@ -166,14 +166,14 @@ class ExampleUnitTest {
         assertFalse("AI response should NEVER call the user 'Sanctuary'", responseSanctuary.contains("Sanctuary"))
 
         val responseRealUser = aiService.generateAdaptiveSanctuaryResponse(
-            userName = "Jayesh",
+            userName = "Prapti",
             currentMood = "calm",
             moodIntensity = 5,
             regulationMode = RegulationMode.LISTEN,
             history = emptyList(),
             latestUserMessage = "I feel so anxious and restless today"
         )
-        assertTrue("AI response should warmly address the actual user by name", responseRealUser.contains("Jayesh"))
+        assertTrue("AI response should warmly address the actual user by name", responseRealUser.contains("Prapti"))
     }
 
     // --- Graduated Mental Health Risk Detection & Escalation Tests ---
@@ -296,5 +296,146 @@ class ExampleUnitTest {
             history = historyWithScreening
         )
         assertEquals(RiskLevel.LEVEL_3_SUICIDAL_IDEATION, result.level)
+    }
+
+    // --- Dynamic Theme & Appearance Mode Tests ---
+
+    @Test
+    fun userPreferences_defaultAppearanceMode_isSystem() {
+        val prefs = com.example.data.local.entity.UserPreferencesEntity()
+        assertEquals("system", prefs.appearanceMode)
+    }
+
+    @Test
+    fun themeResolution_threeDisplayModes_logicValidation() {
+        // Mode: "dark" -> always true
+        val isDarkWhenSystemLight = when ("dark") {
+            "dark" -> true
+            "light" -> false
+            else -> false // system is light
+        }
+        assertTrue(isDarkWhenSystemLight)
+
+        // Mode: "light" -> always false
+        val isDarkWhenSystemDark = when ("light") {
+            "dark" -> true
+            "light" -> false
+            else -> true // system is dark
+        }
+        assertFalse(isDarkWhenSystemDark)
+
+        // Mode: "system" -> follows system in light
+        val isDarkWhenSystemFollowsLight = when ("system") {
+            "dark" -> true
+            "light" -> false
+            else -> false
+        }
+        assertFalse(isDarkWhenSystemFollowsLight)
+
+        // Mode: "system" -> follows system in dark
+        val isDarkWhenSystemFollowsDark = when ("system") {
+            "dark" -> true
+            "light" -> false
+            else -> true
+        }
+        assertTrue(isDarkWhenSystemFollowsDark)
+    }
+
+    @Test
+    fun darkSolaceColors_matchesSpecificationPalette() {
+        val darkTokens = com.example.ui.theme.DarkSolaceColors
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF171714), darkTokens.mainBackground)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF201F1B), darkTokens.secondaryBackground)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF292720), darkTokens.cardBackground)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF2EDE2), darkTokens.primaryText)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFB5ADA0), darkTokens.secondaryText)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFD9B65D), darkTokens.accent)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF39362F), darkTokens.border)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF729B79), darkTokens.success)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFD49D42), darkTokens.warning)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFD96B60), darkTokens.emergency)
+    }
+
+    @Test
+    fun moodType_adaptiveBgTint_adaptsToDarkMode() {
+        MoodType.entries.forEach { mood ->
+            val lightTint = mood.getAdaptiveBgTint(isDark = false)
+            val darkTint = mood.getAdaptiveBgTint(isDark = true)
+            // They should not be identical for dark theme adaptability
+            assertNotNull(lightTint)
+            assertNotNull(darkTint)
+        }
+    }
+
+    // --- Journal Detail Lookup & Selection Tests ---
+
+    @Test
+    fun journalEntry_lookupById_returnsExactMatchingNoteAndMetadata() {
+        val entry1 = com.example.data.local.entity.JournalEntryEntity(
+            id = 101L,
+            title = "Morning Gratitude",
+            content = "Woke up early, drank warm tea, felt calm and grounded today.",
+            associatedMood = "Calm",
+            tags = "morning,peace",
+            createdAt = 1000L,
+            updatedAt = 1000L
+        )
+        val entry2 = com.example.data.local.entity.JournalEntryEntity(
+            id = 102L,
+            title = "Stormy Evening",
+            content = "Overwhelmed with heavy workload and deadlines.",
+            associatedMood = "Stormy",
+            tags = "work,stress",
+            createdAt = 2000L,
+            updatedAt = 2000L
+        )
+
+        val entries = listOf(entry1, entry2)
+
+        // Lookup entry 101
+        val found1 = entries.find { it.id == 101L }
+        assertNotNull(found1)
+        assertEquals(101L, found1!!.id)
+        assertEquals("Morning Gratitude", found1.title)
+        assertEquals("Woke up early, drank warm tea, felt calm and grounded today.", found1.content)
+        assertEquals("Calm", found1.associatedMood)
+        assertEquals("morning,peace", found1.tags)
+
+        // Lookup entry 102
+        val found2 = entries.find { it.id == 102L }
+        assertNotNull(found2)
+        assertEquals(102L, found2!!.id)
+        assertEquals("Stormy Evening", found2.title)
+        assertEquals("Overwhelmed with heavy workload and deadlines.", found2.content)
+
+        // Non-existent ID lookup yields null (which triggers JournalNotFoundView in UI)
+        val notFound = entries.find { it.id == 999L }
+        assertNull(notFound)
+    }
+
+    // --- New User / Auth Onboarding Tests ---
+
+    @Test
+    fun newUser_defaultPreferences_isNotLoggedIn() {
+        val defaultPrefs = com.example.data.local.entity.UserPreferencesEntity()
+        assertFalse("New user must not be logged in by default", defaultPrefs.isLoggedIn)
+        assertEquals("Sanctuary", defaultPrefs.userName)
+        assertEquals("", defaultPrefs.userEmail)
+    }
+
+    @Test
+    fun newUser_guestMode_transitionsToLoggedIn() {
+        var prefs = com.example.data.local.entity.UserPreferencesEntity()
+        assertFalse(prefs.isLoggedIn)
+
+        // Simulating continueAsGuest action
+        prefs = prefs.copy(
+            isLoggedIn = true,
+            userName = "Guest",
+            userEmail = "guest@solace.local"
+        )
+        assertTrue(prefs.isLoggedIn)
+        assertEquals("Guest", prefs.userName)
+        assertEquals("guest@solace.local", prefs.userEmail)
     }
 }

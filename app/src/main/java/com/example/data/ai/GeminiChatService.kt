@@ -7,14 +7,11 @@ import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
-import com.google.firebase.ai.type.InlineDataPart
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 private const val TAG = "GeminiChatService"
@@ -152,37 +149,6 @@ class GeminiChatService {
             latestUserMessage = latestUserMessage
         ).collect { chunk ->
             emit(chunk)
-        }
-    }
-
-    /**
-     * Transcribe recorded audio with graceful fallback
-     */
-    suspend fun transcribeAudio(
-        audioBytes: ByteArray,
-        mimeType: String = "audio/mp4"
-    ): String = withContext(Dispatchers.IO) {
-        try {
-            val transcribeModel = Firebase.ai.generativeModel(
-                modelName = "gemini-1.5-flash",
-                systemInstruction = Content(
-                    parts = listOf(
-                        TextPart("Transcribe this spoken audio verbatim. Return only the exact transcribed text.")
-                    )
-                )
-            )
-            val audioContent = Content(
-                parts = listOf(
-                    InlineDataPart(audioBytes, mimeType),
-                    TextPart("Transcribe this spoken audio.")
-                )
-            )
-            val response: GenerateContentResponse = withTimeout(30_000L) {
-                transcribeModel.generateContent(audioContent)
-            }
-            response.text?.trim() ?: "No speech was detected in this recording."
-        } catch (_: Exception) {
-            "Voice reflection recorded (${audioBytes.size / 1024} KB). [Sanctuary audio note saved locally]."
         }
     }
 }

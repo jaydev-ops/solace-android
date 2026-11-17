@@ -5,25 +5,25 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.ai.ChatbotRole
-import com.example.data.ai.GeminiChatModel
-import com.example.data.ai.GeminiChatService
-import com.example.data.audio.AudioRecorderHelper
+import com.example.data.ai.ConversationOrchestrator
+import com.example.data.ai.ResponseType
 import com.example.data.local.SolaceDatabase
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.UserPreferencesEntity
 import com.example.data.repository.FirestoreRepository
 import com.example.data.repository.SolaceRepository
-import com.example.data.safety.EscalationManager
+import com.example.data.safety.ConversationContext
 import com.example.data.safety.RiskLevel
 import com.example.data.safety.RiskState
+import com.example.data.safety.SafetyStateManager
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -41,8 +41,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val database = SolaceDatabase.getDatabase(application)
     private val repository = SolaceRepository(database)
     private val firestoreRepository = FirestoreRepository(application)
-    private val geminiService = GeminiChatService()
-    private val audioRecorder = AudioRecorderHelper(application)
+    private val safetyStateManager = SafetyStateManager(repository)
+    private val orchestrator = ConversationOrchestrator()
+
     private val auth = try {
         Firebase.auth
     } catch (_: Exception) {
@@ -77,26 +78,24 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow<ChatUiState>(ChatUiState.Idle)
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
-    // Model and Role selection
-    private val _selectedModel = MutableStateFlow(GeminiChatModel.FLASH)
-    val selectedModel: StateFlow<GeminiChatModel> = _selectedModel.asStateFlow()
-
+    // Role selection
     private val _selectedRole = MutableStateFlow(ChatbotRole.SANCTUARY_COMPANION)
     val selectedRole: StateFlow<ChatbotRole> = _selectedRole.asStateFlow()
 
-    // Audio recording state
-    private val _isRecordingAudio = MutableStateFlow(false)
-    val isRecordingAudio: StateFlow<Boolean> = _isRecordingAudio.asStateFlow()
-
-    private val _isTranscribingAudio = MutableStateFlow(false)
-    val isTranscribingAudio: StateFlow<Boolean> = _isTranscribingAudio.asStateFlow()
-
-    // Graduated Mental Health Risk State
+    // Graduated Mental Health Risk State (Persistently tracked across turns and restarts)
     private val _riskState = MutableStateFlow(RiskState())
     val riskState: StateFlow<RiskState> = _riskState.asStateFlow()
 
-    fun selectModel(model: GeminiChatModel) {
-        _selectedModel.value = model
+    init {
+        // Restore active safety state upon ViewModel initialization (Phase 5 / Phase 9)
+        viewModelScope.launch {
+            try {
+                val restoredState = safetyStateManager.getInitialState()
+                _riskState.value = restoredState
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not restore safety state: ${e.message}")
+            }
+        }
     }
 
     fun selectRole(role: ChatbotRole) {
@@ -106,7 +105,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun sendMessage(userText: String) {
         if (userText.isBlank()) return
 
-        val currentModel = _selectedModel.value
         val currentRole = _selectedRole.value
         val trimmed = userText.trim()
         val prefs = userPreferences.value
@@ -117,6 +115,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 senderRole = "user",
                 content = trimmed,
                 regulationMode = currentRole.id,
+                riskLevel = null,
                 timestamp = System.currentTimeMillis()
             )
 
@@ -137,7 +136,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     firestoreRepository.saveChatMessage(
                         senderRole = "user",
                         content = trimmed,
-                        modelName = currentModel.modelId,
+                        modelName = "solace-rule-based",
                         systemRole = currentRole.id
                     )
                 } catch (e: Exception) {
@@ -151,83 +150,66 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 role to it.content
             }
 
-            // 3. Deterministic Mental Health Risk Evaluation
-            val safetyResult = EscalationManager.evaluate(
-                userMessage = trimmed,
-                history = history,
+            // 3. Build Conversation Context
+            val conversationContext = ConversationContext(
+                conversationId = _riskState.value.conversationId.ifBlank { "active_session" },
                 currentState = _riskState.value,
-                userName = prefs.userName.trim()
+                messageHistory = history,
+                userName = prefs.userName.trim(),
+                country = "IN"
             )
-            _riskState.value = safetyResult.updatedState
 
-            // If safety module provides an override response (Levels 2, 3, 4)
-            if (safetyResult.overrideResponse != null) {
-                val safetyMsg = ChatMessageEntity(
-                    senderRole = "assistant",
-                    content = safetyResult.overrideResponse,
-                    regulationMode = currentRole.id,
-                    contextAnchor = "Safety Assessment • ${safetyResult.level.title}",
-                    timestamp = System.currentTimeMillis()
-                )
-
-                if (saveMemory) {
-                    repository.saveChatMessage(
-                        senderRole = "assistant",
-                        content = safetyResult.overrideResponse,
-                        regulationMode = currentRole.id,
-                        contextAnchor = "Safety Assessment • ${safetyResult.level.title}"
-                    )
-                } else {
-                    _ephemeralMessages.value = _ephemeralMessages.value + safetyMsg
-                }
-
-                if (saveMemory && auth?.currentUser != null) {
-                    try {
-                        firestoreRepository.saveChatMessage(
-                            senderRole = "model",
-                            content = safetyResult.overrideResponse,
-                            modelName = currentModel.modelId,
-                            systemRole = currentRole.id
-                        )
-                    } catch (_: Exception) {}
-                }
-                _uiState.value = ChatUiState.Idle
-                return@launch
-            }
-
-            // 4. Normal AI Conversation (Level 0 / Level 1)
             _uiState.value = ChatUiState.Loading
-            val accumulatedResponse = StringBuilder()
 
             try {
-                geminiService.streamChatResponse(
-                    model = currentModel,
-                    role = currentRole,
-                    history = history,
-                    latestUserMessage = trimmed,
-                    customApiKey = prefs.customGeminiApiKey,
-                    userName = prefs.userName.trim()
-                ).collect { chunk ->
-                    accumulatedResponse.append(chunk)
-                    _uiState.value = ChatUiState.Streaming(accumulatedResponse.toString())
-                }
+                // 4. Process Turn through Hybrid Orchestrator Pipeline (Phases 1, 2, 3, 4, 6, 7)
+                val turnResult = orchestrator.processTurn(
+                    rawMessage = trimmed,
+                    context = conversationContext,
+                    customApiKey = prefs.customGeminiApiKey
+                )
 
-                val fullReply = accumulatedResponse.toString().trim()
-                if (fullReply.isNotEmpty()) {
+                // 5. Update and Persist Safety State immediately
+                _riskState.value = turnResult.updatedRiskState
+                safetyStateManager.persistState(turnResult.updatedRiskState)
+
+                val replyText = turnResult.replyText
+
+                // Stream reply in word chunks for gentle, soothing cadence
+                if (replyText.isNotBlank()) {
+                    val words = replyText.split(" ")
+                    val accumulated = StringBuilder()
+                    val chunkSize = 3
+                    for (i in words.indices step chunkSize) {
+                        val chunk = words.subList(i, minOf(i + chunkSize, words.size)).joinToString(" ") + " "
+                        accumulated.append(chunk)
+                        _uiState.value = ChatUiState.Streaming(accumulated.toString())
+                        delay(35)
+                    }
+
+                    val contextLabel = when (turnResult.responseType) {
+                        ResponseType.EMERGENCY_INTERVENTION -> "Safety • Immediate Danger (112)"
+                        ResponseType.SAFETY_SCREENING -> "Safety • ${turnResult.riskLevel.title}"
+                        ResponseType.RULE_BASED -> "Solace Sanctuary Grounding"
+                        else -> "Solace AI"
+                    }
+
                     val aiMsg = ChatMessageEntity(
                         senderRole = "assistant",
-                        content = fullReply,
+                        content = replyText,
                         regulationMode = currentRole.id,
-                        contextAnchor = currentModel.displayName,
+                        contextAnchor = contextLabel,
+                        riskLevel = turnResult.riskLevel.name,
                         timestamp = System.currentTimeMillis()
                     )
 
                     if (saveMemory) {
                         repository.saveChatMessage(
                             senderRole = "assistant",
-                            content = fullReply,
+                            content = replyText,
                             regulationMode = currentRole.id,
-                            contextAnchor = currentModel.displayName
+                            contextAnchor = contextLabel,
+                            riskLevel = turnResult.riskLevel.name
                         )
                     } else {
                         _ephemeralMessages.value = _ephemeralMessages.value + aiMsg
@@ -237,61 +219,30 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         try {
                             firestoreRepository.saveChatMessage(
                                 senderRole = "model",
-                                content = fullReply,
-                                modelName = currentModel.modelId,
+                                content = replyText,
+                                modelName = "solace-rule-based",
                                 systemRole = currentRole.id
                             )
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to persist AI reply to Firestore", e)
                         }
                     }
+
                     _uiState.value = ChatUiState.Idle
                 } else {
                     _uiState.value = ChatUiState.Error("No response received.")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Gemini chat stream error", e)
+                Log.e(TAG, "Chat orchestration error", e)
                 _uiState.value = ChatUiState.Error(e.localizedMessage ?: "Failed to generate reply.")
             }
         }
     }
 
-    fun startAudioRecording(): Boolean {
-        val started = audioRecorder.startRecording()
-        _isRecordingAudio.value = started
-        return started
-    }
-
-    fun stopAudioRecordingAndTranscribe(onSuccess: (String) -> Unit, onError: (String) -> Unit = {}) {
-        val recording = audioRecorder.stopRecording()
-        _isRecordingAudio.value = false
-        if (recording == null) {
-            onError("No audio recorded.")
-            return
-        }
-
-        viewModelScope.launch {
-            _isTranscribingAudio.value = true
-            try {
-                val transcript = geminiService.transcribeAudio(recording.audioBytes, recording.mimeType)
-                onSuccess(transcript)
-            } catch (e: Exception) {
-                Log.e(TAG, "Audio transcription failed", e)
-                onError(e.localizedMessage ?: "Transcription failed")
-            } finally {
-                _isTranscribingAudio.value = false
-            }
-        }
-    }
-
-    fun cancelAudioRecording() {
-        audioRecorder.cancelRecording()
-        _isRecordingAudio.value = false
-    }
-
     fun clearChat() {
         viewModelScope.launch {
             repository.clearChatHistory()
+            safetyStateManager.resetState()
             _ephemeralMessages.value = emptyList()
             _riskState.value = RiskState()
             auth?.currentUser?.uid?.let { uid ->
@@ -335,10 +286,5 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             }
             _uiState.value = ChatUiState.Idle
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        audioRecorder.cancelRecording()
     }
 }

@@ -5,6 +5,7 @@ import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.JournalEntryEntity
 import com.example.data.local.entity.MoodEntryEntity
 import com.example.data.local.entity.RegulationSessionEntity
+import com.example.data.local.entity.SafetyStateEntity
 import com.example.data.local.entity.UserPreferencesEntity
 import com.example.data.model.FirestoreChatMessage
 import com.example.data.model.FirestoreJournalEntry
@@ -76,20 +77,35 @@ class SolaceRepository(private val db: SolaceDatabase) {
         db.journalDao().softDelete(id)
     }
 
-    // --- Chat ---
+    // --- Chat & Safety ---
     val allChatMessages: Flow<List<ChatMessageEntity>> = db.chatDao().getAllMessages()
+    val activeSafetyState: Flow<SafetyStateEntity?> = db.safetyDao().getSafetyState()
+
+    suspend fun getSafetyStateSync(conversationId: String = "active_session"): SafetyStateEntity? {
+        return db.safetyDao().getSafetyStateSync(conversationId)
+    }
+
+    suspend fun saveSafetyState(state: SafetyStateEntity) {
+        db.safetyDao().upsertSafetyState(state)
+    }
+
+    suspend fun clearSafetyState(conversationId: String = "active_session") {
+        db.safetyDao().clearSafetyState(conversationId)
+    }
 
     suspend fun saveChatMessage(
         senderRole: String,
         content: String,
         regulationMode: String = "LISTEN",
-        contextAnchor: String? = null
+        contextAnchor: String? = null,
+        riskLevel: String? = null
     ): Long {
         val message = ChatMessageEntity(
             senderRole = senderRole,
             content = content,
             regulationMode = regulationMode,
             contextAnchor = contextAnchor,
+            riskLevel = riskLevel,
             timestamp = System.currentTimeMillis()
         )
         return db.chatDao().insertMessage(message)
@@ -97,6 +113,7 @@ class SolaceRepository(private val db: SolaceDatabase) {
 
     suspend fun clearChatHistory() {
         db.chatDao().clearChatHistory()
+        db.safetyDao().clearSafetyState()
     }
 
     // --- Regulation ---
@@ -139,9 +156,19 @@ class SolaceRepository(private val db: SolaceDatabase) {
         db.userPreferencesDao().upsertPreferences(current.copy(pinnedTheme = pinnedTheme))
     }
 
-    suspend fun toggleDarkMode(isDark: Boolean) {
+    suspend fun setAppearanceMode(mode: String) {
         val current = userPreferences.firstOrNull() ?: UserPreferencesEntity()
-        db.userPreferencesDao().upsertPreferences(current.copy(isDarkMode = isDark))
+        val isDark = mode == "dark"
+        db.userPreferencesDao().upsertPreferences(
+            current.copy(
+                appearanceMode = mode,
+                isDarkMode = isDark
+            )
+        )
+    }
+
+    suspend fun toggleDarkMode(isDark: Boolean) {
+        setAppearanceMode(if (isDark) "dark" else "light")
     }
 
     suspend fun toggleReducedMotion(reduced: Boolean) {

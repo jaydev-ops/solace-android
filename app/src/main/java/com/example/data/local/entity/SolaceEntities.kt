@@ -34,7 +34,31 @@ data class ChatMessageEntity(
     val content: String,
     val regulationMode: String = "LISTEN",
     val contextAnchor: String? = null,
+    val riskLevel: String? = null,
     val timestamp: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "safety_states")
+data class SafetyStateEntity(
+    @PrimaryKey val conversationId: String = "active_session",
+    val currentLevel: String = "LEVEL_0_NORMAL",
+    val highestLevel: String = "LEVEL_0_NORMAL",
+    val conversationState: String = "NORMAL",
+    val unresolvedSafetyConcern: Boolean = false,
+    val emergencyTriggered: Boolean = false,
+    val lastAssessment: String = "",
+    val lastScreeningQuestionAsked: String? = null,
+    val awaitingScreeningAnswer: Boolean = false,
+    val pendingQuestionId: String? = null,
+    val lastAnsweredQuestionId: String? = null,
+    val lastAnswer: String? = null,
+    val questionAnswersJson: String = "",
+    val turnCount: Int = 0,
+    val helpRecommended: Boolean = false,
+    val humanSupportContacted: Boolean = false,
+    val safetyConfirmed: Boolean = false,
+    val lastConfirmationType: String? = null,
+    val updatedAt: Long = System.currentTimeMillis()
 )
 
 @Entity(tableName = "regulation_sessions")
@@ -57,6 +81,7 @@ data class UserPreferencesEntity(
     val isLoggedIn: Boolean = false,
     val pinnedTheme: String? = null, // null for dynamic mood response
     val isDarkMode: Boolean = false,
+    val appearanceMode: String = "system", // "system", "light", "dark"
     val reducedMotion: Boolean = false,
     val aiPersonalisationConsent: Boolean = true,
     val memorySavingPermissionAsked: Boolean = false, // Has user been prompted for memory permission?

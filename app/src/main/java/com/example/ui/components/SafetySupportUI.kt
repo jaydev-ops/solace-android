@@ -41,11 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.safety.EmergencyResources
 import com.example.data.safety.RiskLevel
-import com.example.ui.theme.CreamWhite
-import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
-import com.example.ui.theme.SoftCharcoal
-import com.example.ui.theme.WarmGrey
+import com.example.ui.theme.LocalSolaceColors
 
 /**
  * Prominent Emergency Support UI matching the Solace+ Sanctuary safety specification.
@@ -57,20 +53,21 @@ fun EmergencySupportCard(
     country: String = "IN",
     onContactTrustedPerson: (() -> Unit)? = null
 ) {
+    val solaceColors = LocalSolaceColors.current
     val context = LocalContext.current
     val emergencyNumber = EmergencyResources.getPrimaryEmergencyNumber(country)
     val teleManasNumber = EmergencyResources.getPrimaryMentalHealthNumber(country)
 
     val terracottaColor = Color(0xFF9E5438)
-    val emergencyRed = Color(0xFFD32F2F)
-    val badgeBg = Color(0xFFFFECEB)
-    val phoneGreen = Color(0xFF2E7D32)
+    val emergencyRed = if (solaceColors.isDark) Color(0xFFE57373) else Color(0xFFD32F2F)
+    val badgeBg = if (solaceColors.isDark) Color(0xFF3E1D1B) else Color(0xFFFFECEB)
+    val phoneGreen = if (solaceColors.isDark) Color(0xFF81C784) else Color(0xFF2E7D32)
 
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = PaleVanilla),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MutedBeige))
+        colors = CardDefaults.cardColors(containerColor = solaceColors.cardBackground),
+        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(solaceColors.border))
     ) {
         Column(
             modifier = Modifier
@@ -97,7 +94,7 @@ fun EmergencySupportCard(
                         text = "Solace AI",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = SoftCharcoal
+                        color = solaceColors.primaryText
                     )
                 }
 
@@ -124,7 +121,7 @@ fun EmergencySupportCard(
                 text = "You don't have to face this alone.",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = SoftCharcoal,
+                color = solaceColors.primaryText,
                 lineHeight = 30.sp
             )
 
@@ -133,7 +130,7 @@ fun EmergencySupportCard(
             Text(
                 text = "Your safety matters. Let's connect you with someone who can help right now.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = WarmGrey,
+                color = solaceColors.secondaryText,
                 lineHeight = 20.sp
             )
 
@@ -145,8 +142,8 @@ fun EmergencySupportCard(
                     .fillMaxWidth()
                     .clickable { dialNumber(context, emergencyNumber) },
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = CreamWhite),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MutedBeige))
+                colors = CardDefaults.cardColors(containerColor = solaceColors.inputBackground),
+                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(solaceColors.border))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -163,7 +160,7 @@ fun EmergencySupportCard(
                             text = "Emergency services",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = SoftCharcoal
+                            color = solaceColors.primaryText
                         )
                     }
 
@@ -173,7 +170,7 @@ fun EmergencySupportCard(
                         text = emergencyNumber,
                         fontSize = 34.sp,
                         fontWeight = FontWeight.Bold,
-                        color = SoftCharcoal
+                        color = solaceColors.primaryText
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -181,7 +178,7 @@ fun EmergencySupportCard(
                     Text(
                         text = if (country == "IN") "India — emergency assistance" else "Emergency assistance",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WarmGrey
+                        color = solaceColors.secondaryText
                     )
                 }
             }
@@ -194,8 +191,8 @@ fun EmergencySupportCard(
                     .fillMaxWidth()
                     .clickable { dialNumber(context, teleManasNumber) },
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = CreamWhite),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MutedBeige))
+                colors = CardDefaults.cardColors(containerColor = solaceColors.inputBackground),
+                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(solaceColors.border))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -212,7 +209,7 @@ fun EmergencySupportCard(
                             text = "Mental health support",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = SoftCharcoal
+                            color = solaceColors.primaryText
                         )
                     }
 
@@ -222,7 +219,7 @@ fun EmergencySupportCard(
                         text = teleManasNumber,
                         fontSize = 34.sp,
                         fontWeight = FontWeight.Bold,
-                        color = SoftCharcoal
+                        color = solaceColors.primaryText
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -230,7 +227,7 @@ fun EmergencySupportCard(
                     Text(
                         text = if (country == "IN") "Tele-MANAS" else "National Mental Health Lifeline",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WarmGrey
+                        color = solaceColors.secondaryText
                     )
                 }
             }
@@ -241,15 +238,15 @@ fun EmergencySupportCard(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = CreamWhite),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MutedBeige))
+                colors = CardDefaults.cardColors(containerColor = solaceColors.inputBackground),
+                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(solaceColors.border))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Can someone you trust stay with you?",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = SoftCharcoal
+                        color = solaceColors.primaryText
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -257,7 +254,7 @@ fun EmergencySupportCard(
                     Text(
                         text = "Contact a friend, family member or someone nearby who can be physically present.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WarmGrey,
+                        color = solaceColors.secondaryText,
                         lineHeight = 18.sp
                     )
 
@@ -295,7 +292,7 @@ fun EmergencySupportCard(
             Text(
                 text = "Solace+ is not an emergency service. Please seek immediate human assistance.",
                 style = MaterialTheme.typography.labelSmall,
-                color = WarmGrey.copy(alpha = 0.8f),
+                color = solaceColors.secondaryText.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -314,14 +311,15 @@ fun SafetyScreeningSupportBanner(
 ) {
     if (riskLevel != RiskLevel.LEVEL_2_ELEVATED && riskLevel != RiskLevel.LEVEL_3_SUICIDAL_IDEATION) return
 
+    val solaceColors = LocalSolaceColors.current
     val isLevel3 = riskLevel == RiskLevel.LEVEL_3_SUICIDAL_IDEATION
     val context = LocalContext.current
 
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PaleVanilla),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MutedBeige))
+        colors = CardDefaults.cardColors(containerColor = solaceColors.cardBackground),
+        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(solaceColors.border))
     ) {
         Row(
             modifier = Modifier
@@ -339,14 +337,14 @@ fun SafetyScreeningSupportBanner(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (isLevel3) Color(0xFFFFECEB) else CreamWhite)
-                        .border(1.dp, MutedBeige, CircleShape),
+                        .background(if (isLevel3) (if (solaceColors.isDark) Color(0xFF3E1D1B) else Color(0xFFFFECEB)) else solaceColors.inputBackground)
+                        .border(1.dp, solaceColors.border, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (isLevel3) Icons.Default.FavoriteBorder else Icons.Default.Call,
                         contentDescription = null,
-                        tint = if (isLevel3) Color(0xFFD32F2F) else Color(0xFF9E5438),
+                        tint = if (isLevel3) (if (solaceColors.isDark) Color(0xFFE57373) else Color(0xFFD32F2F)) else Color(0xFF9E5438),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -356,12 +354,12 @@ fun SafetyScreeningSupportBanner(
                         text = if (isLevel3) "Confidential Support 24/7" else "Professional Care Available",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = SoftCharcoal
+                        color = solaceColors.primaryText
                     )
                     Text(
                         text = if (isLevel3) "Tele-MANAS: 14416 • Free & 24/7" else "Speak with a licensed counsellor",
                         style = MaterialTheme.typography.bodySmall,
-                        color = WarmGrey,
+                        color = solaceColors.secondaryText,
                         fontSize = 11.sp
                     )
                 }

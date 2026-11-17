@@ -54,15 +54,8 @@ import com.example.data.model.CuratedRegulationActivities
 import com.example.data.model.MoodType
 import com.example.data.model.RegulationActivity
 import com.example.ui.components.SolaceTopBar
-import com.example.ui.theme.ButteryYellow
-import com.example.ui.theme.CreamWhite
 import com.example.ui.theme.LocalMoodColors
-import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
-import com.example.ui.theme.SoftButter
-import com.example.ui.theme.SoftCharcoal
-import com.example.ui.theme.SubtleOutline
-import com.example.ui.theme.WarmGrey
+import com.example.ui.theme.LocalSolaceColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -75,6 +68,7 @@ fun InsightsScreen(
     onOpenSettings: () -> Unit
 ) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
     var selectedTimeframe by remember { mutableStateOf("Last 7 Days") }
 
     Column(
@@ -100,12 +94,12 @@ fun InsightsScreen(
                         text = "Emotional Insights",
                         style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = solaceColors.primaryText
                     )
                     Text(
                         text = "Validating your natural flow without judgment, streaks, or scores.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = WarmGrey
+                        color = solaceColors.secondaryText
                     )
                 }
             }
@@ -116,7 +110,8 @@ fun InsightsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(PaleVanilla)
+                        .background(solaceColors.cardHighlight)
+                        .border(1.dp, solaceColors.border, RoundedCornerShape(16.dp))
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -126,7 +121,8 @@ fun InsightsScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) CreamWhite else Color.Transparent)
+                                .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
+                                .border(1.dp, if (isSelected) solaceColors.border else Color.Transparent, RoundedCornerShape(12.dp))
                                 .clickable { selectedTimeframe = timeframe }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
@@ -135,7 +131,7 @@ fun InsightsScreen(
                                 text = timeframe,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) SoftCharcoal else WarmGrey
+                                color = if (isSelected) solaceColors.primaryText else solaceColors.secondaryText
                             )
                         }
                     }
@@ -148,7 +144,7 @@ fun InsightsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(SubtleOutline, MutedBeige)))
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(solaceColors.border, solaceColors.border)))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(
@@ -166,20 +162,21 @@ fun InsightsScreen(
                                 Text(
                                     text = "Height indicates emotional intensity (1–10)",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = WarmGrey
+                                    color = solaceColors.secondaryText
                                 )
                             }
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(PaleVanilla)
+                                    .background(solaceColors.inputBackground)
+                                    .border(1.dp, solaceColors.border, RoundedCornerShape(10.dp))
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Text(
                                     text = "Balanced Flow",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = moodColors.primary
+                                    color = solaceColors.accent
                                 )
                             }
                         }
@@ -219,7 +216,7 @@ fun InsightsScreen(
                                             .width(26.dp)
                                             .fillMaxHeight(barHeightFraction)
                                             .clip(RoundedCornerShape(13.dp))
-                                            .background(mood.bgTint)
+                                            .background(mood.getAdaptiveBgTint(solaceColors.isDark))
                                             .border(1.dp, mood.accentColor.copy(alpha = 0.5f), RoundedCornerShape(13.dp))
                                             .padding(top = 4.dp),
                                         contentAlignment = Alignment.TopCenter
@@ -254,7 +251,7 @@ fun InsightsScreen(
                                     Text(
                                         text = day,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = WarmGrey,
+                                        color = solaceColors.secondaryText,
                                         fontSize = 11.sp
                                     )
                                 }
@@ -270,7 +267,7 @@ fun InsightsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(SubtleOutline, MutedBeige)))
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(solaceColors.border, solaceColors.border)))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
@@ -282,7 +279,7 @@ fun InsightsScreen(
                         Text(
                             text = "Your emotional tapestry over the selected horizon",
                             style = MaterialTheme.typography.bodySmall,
-                            color = WarmGrey
+                            color = solaceColors.secondaryText
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -316,14 +313,14 @@ fun InsightsScreen(
                                             text = mood.title,
                                             style = MaterialTheme.typography.bodySmall,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = SoftCharcoal
+                                            color = solaceColors.primaryText
                                         )
                                     }
                                     Text(
                                         text = "$percentage%",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = WarmGrey
+                                        color = solaceColors.secondaryText
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -332,7 +329,7 @@ fun InsightsScreen(
                                         .fillMaxWidth()
                                         .height(8.dp)
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(MutedBeige)
+                                        .background(solaceColors.border)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -354,7 +351,7 @@ fun InsightsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(SubtleOutline, MutedBeige)))
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(solaceColors.border, solaceColors.border)))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
@@ -366,7 +363,7 @@ fun InsightsScreen(
                         Text(
                             text = "Factors associated with noticeable shifts in well-being",
                             style = MaterialTheme.typography.bodySmall,
-                            color = WarmGrey
+                            color = solaceColors.secondaryText
                         )
 
                         Spacer(modifier = Modifier.height(14.dp))
@@ -384,8 +381,8 @@ fun InsightsScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 6.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(PaleVanilla)
-                                    .border(1.dp, MutedBeige, RoundedCornerShape(14.dp))
+                                    .background(solaceColors.inputBackground)
+                                    .border(1.dp, solaceColors.border, RoundedCornerShape(14.dp))
                                     .padding(horizontal = 14.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
@@ -394,7 +391,7 @@ fun InsightsScreen(
                                     text = tag,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = SoftCharcoal
+                                    color = solaceColors.primaryText
                                 )
                                 Text(
                                     text = effect,
@@ -413,8 +410,8 @@ fun InsightsScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaleVanilla),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(SoftButter, MutedBeige)))
+                    colors = CardDefaults.cardColors(containerColor = solaceColors.cardBackground),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(solaceColors.border, solaceColors.border)))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(
@@ -425,13 +422,13 @@ fun InsightsScreen(
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(ButteryYellow),
+                                    .background(solaceColors.accent),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Spa,
                                     contentDescription = null,
-                                    tint = SoftCharcoal,
+                                    tint = solaceColors.onAccent,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -440,7 +437,7 @@ fun InsightsScreen(
                                     text = "SOMATIC SANCTUARY PRACTICE",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = SoftCharcoal,
+                                    color = solaceColors.accent,
                                     letterSpacing = 0.5.sp
                                 )
                                 Text(
@@ -460,8 +457,8 @@ fun InsightsScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(CreamWhite)
-                                    .border(1.dp, MutedBeige, RoundedCornerShape(16.dp))
+                                    .background(solaceColors.inputBackground)
+                                    .border(1.dp, solaceColors.border, RoundedCornerShape(16.dp))
                                     .clickable { onStartRegulation(activity) }
                                     .padding(horizontal = 14.dp, vertical = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -472,25 +469,25 @@ fun InsightsScreen(
                                         text = activity.title,
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = SoftCharcoal
+                                        color = solaceColors.primaryText
                                     )
                                     Text(
                                         text = "${activity.durationSeconds / 60} mins • ${activity.category}",
                                         fontSize = 11.sp,
-                                        color = WarmGrey
+                                        color = solaceColors.secondaryText
                                     )
                                 }
                                 Box(
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(ButteryYellow),
+                                        .background(solaceColors.accent),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                         contentDescription = "Start",
-                                        tint = SoftCharcoal,
+                                        tint = solaceColors.onAccent,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }

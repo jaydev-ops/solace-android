@@ -1,0 +1,334 @@
+/* ==========================================================================
+   Solace+ Design System - Theme Tokens & Variables
+   Strictly aligned with Android Jetpack Compose & Solace+ HIG specifications
+   ========================================================================== */
+
+:root {
+  /* Declare viewport-wide color-scheme per modern-web-guidance */
+  color-scheme: light dark;
+
+  /* Typography */
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Corner Radii Hierarchy */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-pill: 9999px;
+
+  /* Light Theme (Warm Ivory Sanctuary) */
+  --solace-bg: #F9F6EE;
+  --solace-bg-secondary: #FFFFFCF5;
+  --solace-card-bg: #FFFFFCF5;
+  --solace-surface-raised: #FFF8E8;
+  --solace-input-bg: #FFF8E8;
+  --solace-primary-text: #30312D;
+  --solace-secondary-text: #89877F;
+  --solace-muted-text: #89877F;
+  --solace-accent: #F5D982;
+  --solace-accent-soft: #FAEAB5;
+  --solace-accent-deep: #D4A936;
+  --solace-on-accent: #30312D;
+  --solace-border: #EAE3D5;
+  --solace-border-subtle: #E0D8C8;
+  --solace-divider: rgba(224, 216, 200, 0.6);
+  --solace-card-highlight: #FFF8E8;
+  --solace-card-shadow: 0 4px 20px -2px rgba(48, 49, 45, 0.05), 0 2px 6px -1px rgba(48, 49, 45, 0.03);
+  --solace-card-shadow-hover: 0 10px 25px -4px rgba(48, 49, 45, 0.08), 0 4px 10px -2px rgba(48, 49, 45, 0.04);
+  --solace-card-shadow-active: 0 2px 8px -1px rgba(48, 49, 45, 0.06);
+
+  /* Functional Status */
+  --solace-success: #2E7D32;
+  --solace-success-soft: #E8F5E9;
+  --solace-warning: #D98E04;
+  --solace-warning-soft: #FFF8E1;
+  --solace-emergency: #C62828;
+  --solace-emergency-soft: #FFEBEE;
+
+  /* 7 Mood Accents - Light Palette (from Color.kt) */
+  --mood-happy-primary: #D98E04;
+  --mood-happy-container: #FDE3A7;
+  --mood-happy-highlight: #FFF9EE;
+  --mood-happy-border: #F2D99E;
+  --mood-happy-glow: #FFF2D0;
+  --mood-happy-bg: #FFF7E2;
+
+  --mood-calm-primary: #4C7D5C;
+  --mood-calm-container: #A8D5BA;
+  --mood-calm-highlight: #EFF5F1;
+  --mood-calm-border: #CCE0D3;
+  --mood-calm-glow: #E0EFE5;
+  --mood-calm-bg: #EFF7F2;
+
+  --mood-neutral-primary: #5E5854;
+  --mood-neutral-container: #E2DDD6;
+  --mood-neutral-highlight: #F4F1EB;
+  --mood-neutral-border: #DDD7CE;
+  --mood-neutral-glow: #EFECE5;
+  --mood-neutral-bg: #F4F1EB;
+
+  --mood-sad-primary: #4E6E8A;
+  --mood-sad-container: #CAD5E2;
+  --mood-sad-highlight: #EEF2F7;
+  --mood-sad-border: #D0DCE7;
+  --mood-sad-glow: #E5ECF3;
+  --mood-sad-bg: #EEF3F8;
+
+  --mood-anxious-primary: #3B7C91;
+  --mood-anxious-container: #BCE0E8;
+  --mood-anxious-highlight: #EAF1F3;
+  --mood-anxious-border: #C7DFE5;
+  --mood-anxious-glow: #DFEFF2;
+  --mood-anxious-bg: #EAF4F7;
+
+  --mood-angry-primary: #9C5135;
+  --mood-angry-container: #E8C8BC;
+  --mood-angry-highlight: #F5ECE7;
+  --mood-angry-border: #E4D0C7;
+  --mood-angry-glow: #F4E4DC;
+  --mood-angry-bg: #F9EFEA;
+
+  --mood-overwhelmed-primary: #545A61;
+  --mood-overwhelmed-container: #D8DCE0;
+  --mood-overwhelmed-highlight: #ECEEF0;
+  --mood-overwhelmed-border: #D2D6DA;
+  --mood-overwhelmed-glow: #E8EAEB;
+  --mood-overwhelmed-bg: #EFF1F3;
+
+  /* Active Dynamic Mood Context (defaults to Calm) */
+  --active-mood-primary: var(--mood-calm-primary);
+  --active-mood-container: var(--mood-calm-container);
+  --active-mood-highlight: var(--mood-calm-highlight);
+  --active-mood-border: var(--mood-calm-border);
+  --active-mood-glow: var(--mood-calm-glow);
+  --active-mood-bg: var(--mood-calm-bg);
+}
+
+/* ==========================================================================
+   Dark Theme (Warm Obsidian Sanctuary)
+   Triggered via data-theme="dark" OR system dark mode (unless light is forced)
+   ========================================================================== */
+
+:root[data-theme="dark"] {
+  --solace-bg: #171714;
+  --solace-bg-secondary: #201F1B;
+  --solace-card-bg: #292720;
+  --solace-surface-raised: #333028;
+  --solace-input-bg: #201F1B;
+  --solace-primary-text: #F2EDE2;
+  --solace-secondary-text: #B5ADA0;
+  --solace-muted-text: #7A7468;
+  --solace-accent: #D9B65D;
+  --solace-accent-soft: #383220;
+  --solace-accent-deep: #ECC269;
+  --solace-on-accent: #171714;
+  --solace-border: #39362F;
+  --solace-border-subtle: #302D26;
+  --solace-divider: rgba(57, 54, 47, 0.8);
+  --solace-card-highlight: #2E2C24;
+  --solace-card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  --solace-card-shadow-hover: 0 10px 25px -4px rgba(0, 0, 0, 0.45);
+  --solace-card-shadow-active: 0 2px 8px -1px rgba(0, 0, 0, 0.3);
+
+  /* Functional Status Dark */
+  --solace-success: #729B79;
+  --solace-success-soft: #1E2B20;
+  --solace-warning: #D49D42;
+  --solace-warning-soft: #2D2415;
+  --solace-emergency: #D96B60;
+  --solace-emergency-soft: #381E1C;
+
+  /* 7 Mood Accents - Dark Palette (from Color.kt: toDark()) */
+  --mood-happy-primary: #D98E04;
+  --mood-happy-container: rgba(253, 227, 167, 0.22);
+  --mood-happy-highlight: #24221C;
+  --mood-happy-border: #39362F;
+  --mood-happy-glow: rgba(217, 142, 4, 0.12);
+  --mood-happy-bg: rgba(217, 142, 4, 0.22);
+
+  --mood-calm-primary: #4C7D5C;
+  --mood-calm-container: rgba(168, 213, 186, 0.22);
+  --mood-calm-highlight: #24221C;
+  --mood-calm-border: #39362F;
+  --mood-calm-glow: rgba(76, 125, 92, 0.12);
+  --mood-calm-bg: rgba(76, 125, 92, 0.22);
+
+  --mood-neutral-primary: #5E5854;
+  --mood-neutral-container: rgba(226, 221, 214, 0.22);
+  --mood-neutral-highlight: #24221C;
+  --mood-neutral-border: #39362F;
+  --mood-neutral-glow: rgba(94, 88, 84, 0.12);
+  --mood-neutral-bg: rgba(94, 88, 84, 0.22);
+
+  --mood-sad-primary: #4E6E8A;
+  --mood-sad-container: rgba(202, 213, 226, 0.22);
+  --mood-sad-highlight: #24221C;
+  --mood-sad-border: #39362F;
+  --mood-sad-glow: rgba(78, 110, 138, 0.12);
+  --mood-sad-bg: rgba(78, 110, 138, 0.22);
+
+  --mood-anxious-primary: #3B7C91;
+  --mood-anxious-container: rgba(188, 224, 232, 0.22);
+  --mood-anxious-highlight: #24221C;
+  --mood-anxious-border: #39362F;
+  --mood-anxious-glow: rgba(59, 124, 145, 0.12);
+  --mood-anxious-bg: rgba(59, 124, 145, 0.22);
+
+  --mood-angry-primary: #9C5135;
+  --mood-angry-container: rgba(232, 200, 188, 0.22);
+  --mood-angry-highlight: #24221C;
+  --mood-angry-border: #39362F;
+  --mood-angry-glow: rgba(156, 81, 53, 0.12);
+  --mood-angry-bg: rgba(156, 81, 53, 0.22);
+
+  --mood-overwhelmed-primary: #545A61;
+  --mood-overwhelmed-container: rgba(216, 220, 224, 0.22);
+  --mood-overwhelmed-highlight: #24221C;
+  --mood-overwhelmed-border: #39362F;
+  --mood-overwhelmed-glow: rgba(84, 90, 97, 0.12);
+  --mood-overwhelmed-bg: rgba(84, 90, 97, 0.22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --solace-bg: #171714;
+    --solace-bg-secondary: #201F1B;
+    --solace-card-bg: #292720;
+    --solace-surface-raised: #333028;
+    --solace-input-bg: #201F1B;
+    --solace-primary-text: #F2EDE2;
+    --solace-secondary-text: #B5ADA0;
+    --solace-muted-text: #7A7468;
+    --solace-accent: #D9B65D;
+    --solace-accent-soft: #383220;
+    --solace-accent-deep: #ECC269;
+    --solace-on-accent: #171714;
+    --solace-border: #39362F;
+    --solace-border-subtle: #302D26;
+    --solace-divider: rgba(57, 54, 47, 0.8);
+    --solace-card-highlight: #2E2C24;
+    --solace-card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+    --solace-card-shadow-hover: 0 10px 25px -4px rgba(0, 0, 0, 0.45);
+    --solace-card-shadow-active: 0 2px 8px -1px rgba(0, 0, 0, 0.3);
+
+    --solace-success: #729B79;
+    --solace-success-soft: #1E2B20;
+    --solace-warning: #D49D42;
+    --solace-warning-soft: #2D2415;
+    --solace-emergency: #D96B60;
+    --solace-emergency-soft: #381E1C;
+
+    --mood-happy-primary: #D98E04;
+    --mood-happy-container: rgba(253, 227, 167, 0.22);
+    --mood-happy-highlight: #24221C;
+    --mood-happy-border: #39362F;
+    --mood-happy-glow: rgba(217, 142, 4, 0.12);
+    --mood-happy-bg: rgba(217, 142, 4, 0.22);
+
+    --mood-calm-primary: #4C7D5C;
+    --mood-calm-container: rgba(168, 213, 186, 0.22);
+    --mood-calm-highlight: #24221C;
+    --mood-calm-border: #39362F;
+    --mood-calm-glow: rgba(76, 125, 92, 0.12);
+    --mood-calm-bg: rgba(76, 125, 92, 0.22);
+
+    --mood-neutral-primary: #5E5854;
+    --mood-neutral-container: rgba(226, 221, 214, 0.22);
+    --mood-neutral-highlight: #24221C;
+    --mood-neutral-border: #39362F;
+    --mood-neutral-glow: rgba(94, 88, 84, 0.12);
+    --mood-neutral-bg: rgba(94, 88, 84, 0.22);
+
+    --mood-sad-primary: #4E6E8A;
+    --mood-sad-container: rgba(202, 213, 226, 0.22);
+    --mood-sad-highlight: #24221C;
+    --mood-sad-border: #39362F;
+    --mood-sad-glow: rgba(78, 110, 138, 0.12);
+    --mood-sad-bg: rgba(78, 110, 138, 0.22);
+
+    --mood-anxious-primary: #3B7C91;
+    --mood-anxious-container: rgba(188, 224, 232, 0.22);
+    --mood-anxious-highlight: #24221C;
+    --mood-anxious-border: #39362F;
+    --mood-anxious-glow: rgba(59, 124, 145, 0.12);
+    --mood-anxious-bg: rgba(59, 124, 145, 0.22);
+
+    --mood-angry-primary: #9C5135;
+    --mood-angry-container: rgba(232, 200, 188, 0.22);
+    --mood-angry-highlight: #24221C;
+    --mood-angry-border: #39362F;
+    --mood-angry-glow: rgba(156, 81, 53, 0.12);
+    --mood-angry-bg: rgba(156, 81, 53, 0.22);
+
+    --mood-overwhelmed-primary: #545A61;
+    --mood-overwhelmed-container: rgba(216, 220, 224, 0.22);
+    --mood-overwhelmed-highlight: #24221C;
+    --mood-overwhelmed-border: #39362F;
+    --mood-overwhelmed-glow: rgba(84, 90, 97, 0.12);
+    --mood-overwhelmed-bg: rgba(84, 90, 97, 0.22);
+  }
+}
+
+/* ==========================================================================
+   Mood Dynamic Overrides
+   ========================================================================== */
+:root[data-mood="happy"] {
+  --active-mood-primary: var(--mood-happy-primary);
+  --active-mood-container: var(--mood-happy-container);
+  --active-mood-highlight: var(--mood-happy-highlight);
+  --active-mood-border: var(--mood-happy-border);
+  --active-mood-glow: var(--mood-happy-glow);
+  --active-mood-bg: var(--mood-happy-bg);
+}
+:root[data-mood="calm"] {
+  --active-mood-primary: var(--mood-calm-primary);
+  --active-mood-container: var(--mood-calm-container);
+  --active-mood-highlight: var(--mood-calm-highlight);
+  --active-mood-border: var(--mood-calm-border);
+  --active-mood-glow: var(--mood-calm-glow);
+  --active-mood-bg: var(--mood-calm-bg);
+}
+:root[data-mood="neutral"] {
+  --active-mood-primary: var(--mood-neutral-primary);
+  --active-mood-container: var(--mood-neutral-container);
+  --active-mood-highlight: var(--mood-neutral-highlight);
+  --active-mood-border: var(--mood-neutral-border);
+  --active-mood-glow: var(--mood-neutral-glow);
+  --active-mood-bg: var(--mood-neutral-bg);
+}
+:root[data-mood="sad"] {
+  --active-mood-primary: var(--mood-sad-primary);
+  --active-mood-container: var(--mood-sad-container);
+  --active-mood-highlight: var(--mood-sad-highlight);
+  --active-mood-border: var(--mood-sad-border);
+  --active-mood-glow: var(--mood-sad-glow);
+  --active-mood-bg: var(--mood-sad-bg);
+}
+:root[data-mood="anxious"] {
+  --active-mood-primary: var(--mood-anxious-primary);
+  --active-mood-container: var(--mood-anxious-container);
+  --active-mood-highlight: var(--mood-anxious-highlight);
+  --active-mood-border: var(--mood-anxious-border);
+  --active-mood-glow: var(--mood-anxious-glow);
+  --active-mood-bg: var(--mood-anxious-bg);
+}
+:root[data-mood="angry"] {
+  --active-mood-primary: var(--mood-angry-primary);
+  --active-mood-container: var(--mood-angry-container);
+  --active-mood-highlight: var(--mood-angry-highlight);
+  --active-mood-border: var(--mood-angry-border);
+  --active-mood-glow: var(--mood-angry-glow);
+  --active-mood-bg: var(--mood-angry-bg);
+}
+:root[data-mood="overwhelmed"] {
+  --active-mood-primary: var(--mood-overwhelmed-primary);
+  --active-mood-container: var(--mood-overwhelmed-container);
+  --active-mood-highlight: var(--mood-overwhelmed-highlight);
+  --active-mood-border: var(--mood-overwhelmed-border);
+  --active-mood-glow: var(--mood-overwhelmed-glow);
+  --active-mood-bg: var(--mood-overwhelmed-bg);
+}

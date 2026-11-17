@@ -1,0 +1,24 @@
+{
+  "name": "solace-web",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && cp dist/index.html dist/200.html",
+    "test": "tsx src/tests/engineValidation.ts && tsx src/tests/batch1Validation.ts && tsx src/tests/batch2Validation.ts && tsx src/tests/batch3Validation.ts && tsx src/tests/batch4Validation.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "^1.73.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}

@@ -22,13 +22,80 @@ val DustyBlue = Color(0xFFAEBED2)
 val MutedLavender = Color(0xFFC9BCE0)
 val SoftTerracotta = Color(0xFFD59B83)
 
-// Dark Theme Surfaces
-val DarkSanctuaryBg = Color(0xFF191916)
-val DarkSanctuarySurface = Color(0xFF23231F)
-val DarkSanctuarySurfaceRaised = Color(0xFF2C2C26)
-val DarkTextPrimary = Color(0xFFF7F5EE)
-val DarkTextSecondary = Color(0xFFB5B2A8)
-val DarkBorder = Color(0xFF3C3B33)
+// Dark Theme Palette (Solace+ Warm Obsidian System)
+val DarkSanctuaryBg = Color(0xFF171714)
+val DarkSanctuarySecondary = Color(0xFF201F1B)
+val DarkSanctuaryCard = Color(0xFF292720)
+val DarkSanctuarySurfaceRaised = Color(0xFF333028)
+val DarkTextPrimary = Color(0xFFF2EDE2)
+val DarkTextSecondary = Color(0xFFB5ADA0)
+val DarkAccent = Color(0xFFD9B65D)
+val DarkBorder = Color(0xFF39362F)
+val DarkSubtleBorder = Color(0xFF302D26)
+val DarkSuccess = Color(0xFF729B79)
+val DarkWarning = Color(0xFFD49D42)
+val DarkEmergency = Color(0xFFD96B60)
+
+// Backwards-compatible aliases
+val DarkSanctuarySurface = DarkSanctuarySecondary
+
+// Centralized Solace+ Reusable Design Tokens
+data class SolaceColors(
+    val mainBackground: Color,
+    val secondaryBackground: Color,
+    val cardBackground: Color,
+    val surfaceRaised: Color,
+    val primaryText: Color,
+    val secondaryText: Color,
+    val accent: Color,
+    val onAccent: Color,
+    val border: Color,
+    val subtleBorder: Color,
+    val inputBackground: Color,
+    val cardHighlight: Color,
+    val success: Color,
+    val warning: Color,
+    val emergency: Color,
+    val isDark: Boolean
+)
+
+val LightSolaceColors = SolaceColors(
+    mainBackground = WarmIvory,
+    secondaryBackground = CreamWhite,
+    cardBackground = CreamWhite,
+    surfaceRaised = PaleVanilla,
+    primaryText = SoftCharcoal,
+    secondaryText = WarmGrey,
+    accent = ButteryYellow,
+    onAccent = SoftCharcoal,
+    border = MutedBeige,
+    subtleBorder = SubtleOutline,
+    inputBackground = PaleVanilla,
+    cardHighlight = PaleVanilla,
+    success = Color(0xFF2E7D32),
+    warning = Color(0xFFD98E04),
+    emergency = Color(0xFFC62828),
+    isDark = false
+)
+
+val DarkSolaceColors = SolaceColors(
+    mainBackground = DarkSanctuaryBg,
+    secondaryBackground = DarkSanctuarySecondary,
+    cardBackground = DarkSanctuaryCard,
+    surfaceRaised = DarkSanctuarySurfaceRaised,
+    primaryText = DarkTextPrimary,
+    secondaryText = DarkTextSecondary,
+    accent = DarkAccent,
+    onAccent = Color(0xFF171714),
+    border = DarkBorder,
+    subtleBorder = DarkSubtleBorder,
+    inputBackground = DarkSanctuarySecondary,
+    cardHighlight = Color(0xFF2E2C24),
+    success = DarkSuccess,
+    warning = DarkWarning,
+    emergency = DarkEmergency,
+    isDark = true
+)
 
 // 7 Mood Specific Accent Definitions
 data class MoodColorTokens(
@@ -42,6 +109,14 @@ data class MoodColorTokens(
 ) {
     val backgroundTint: Color get() = surfaceHighlight
     val primaryAccent: Color get() = primary
+
+    fun toDark(): MoodColorTokens = copy(
+        container = container.copy(alpha = 0.22f),
+        onContainer = DarkTextPrimary,
+        surfaceHighlight = Color(0xFF24221C),
+        border = DarkBorder,
+        ambientGlow = primary.copy(alpha = 0.12f)
+    )
 }
 
 val HappyMoodColors = MoodColorTokens(

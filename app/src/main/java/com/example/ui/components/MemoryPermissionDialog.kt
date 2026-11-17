@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,14 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.ui.theme.ButteryYellow
-import com.example.ui.theme.CreamWhite
 import com.example.ui.theme.LocalMoodColors
-import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
-import com.example.ui.theme.SoftButter
-import com.example.ui.theme.SoftCharcoal
-import com.example.ui.theme.WarmGrey
+import com.example.ui.theme.LocalSolaceColors
 
 @Composable
 fun MemoryPermissionDialog(
@@ -54,6 +49,7 @@ fun MemoryPermissionDialog(
     onDismiss: () -> Unit = {}
 ) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -64,7 +60,8 @@ fun MemoryPermissionDialog(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = CreamWhite),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(solaceColors.border)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
@@ -76,13 +73,14 @@ fun MemoryPermissionDialog(
                     modifier = Modifier
                         .size(60.dp)
                         .clip(CircleShape)
-                        .background(PaleVanilla),
+                        .background(solaceColors.inputBackground)
+                        .border(1.dp, solaceColors.border, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Shield,
                         contentDescription = null,
-                        tint = moodColors.primary,
+                        tint = solaceColors.accent,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -93,7 +91,7 @@ fun MemoryPermissionDialog(
                     text = "Privacy & Memory Permission",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = SoftCharcoal,
+                    color = solaceColors.primaryText,
                     textAlign = TextAlign.Center
                 )
 
@@ -102,7 +100,7 @@ fun MemoryPermissionDialog(
                 Text(
                     text = "Would you like Solace AI to remember your emotional check-ins, journal reflections, and conversations?",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = WarmGrey,
+                    color = solaceColors.secondaryText,
                     textAlign = TextAlign.Center,
                     lineHeight = 22.sp
                 )
@@ -113,14 +111,15 @@ fun MemoryPermissionDialog(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = PaleVanilla
+                    color = solaceColors.inputBackground,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, solaceColors.border)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Psychology,
                                 contentDescription = null,
-                                tint = moodColors.primary,
+                                tint = solaceColors.accent,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -128,14 +127,14 @@ fun MemoryPermissionDialog(
                                 text = "If you allow memory saving:",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = SoftCharcoal
+                                color = solaceColors.primaryText
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Solace learns your emotional patterns and past entries to provide deeply personalized, continuous companionship. Data stays on your phone.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SoftCharcoal.copy(alpha = 0.85f),
+                            color = solaceColors.secondaryText,
                             lineHeight = 18.sp
                         )
                     }
@@ -146,14 +145,15 @@ fun MemoryPermissionDialog(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFF7F5F0)
+                    color = solaceColors.inputBackground,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, solaceColors.border)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = null,
-                                tint = WarmGrey,
+                                tint = solaceColors.secondaryText,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -161,14 +161,14 @@ fun MemoryPermissionDialog(
                                 text = "If you decline (Ephemeral Mode):",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = SoftCharcoal
+                                color = solaceColors.primaryText
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Conversations remain strictly within the moment and are wiped when you close the session. No persistent memory is stored.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SoftCharcoal.copy(alpha = 0.85f),
+                            color = solaceColors.secondaryText,
                             lineHeight = 18.sp
                         )
                     }
@@ -184,8 +184,8 @@ fun MemoryPermissionDialog(
                         .height(52.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = ButteryYellow,
-                        contentColor = SoftCharcoal
+                        containerColor = solaceColors.accent,
+                        contentColor = solaceColors.onAccent
                     )
                 ) {
                     Text(
@@ -203,14 +203,12 @@ fun MemoryPermissionDialog(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(20.dp),
-                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(MutedBeige)
-                    )
+                    border = androidx.compose.foundation.BorderStroke(1.dp, solaceColors.border)
                 ) {
                     Text(
                         text = "Keep Ephemeral (Don't Save)",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SoftCharcoal,
+                        color = solaceColors.primaryText,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -220,7 +218,7 @@ fun MemoryPermissionDialog(
                 Text(
                     text = "You can change this anytime in Settings • Privacy & Security",
                     style = MaterialTheme.typography.labelSmall,
-                    color = WarmGrey,
+                    color = solaceColors.secondaryText,
                     textAlign = TextAlign.Center
                 )
             }

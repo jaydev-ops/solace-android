@@ -12,6 +12,7 @@ data class FirestoreUserProfile(
     val email: String? = null,
     val pinnedTheme: String? = null,
     val isDarkMode: Boolean = false,
+    val appearanceMode: String = "system",
     val aiPersonalisationConsent: Boolean = true,
     @ServerTimestamp val createdAt: Timestamp? = null,
     @ServerTimestamp val updatedAt: Timestamp? = null
@@ -51,16 +52,6 @@ data class FirestoreChatMessage(
     val content: String = "",
     val modelName: String = "gemini-3.8-flash",
     val systemRole: String = "solace_companion",
-    @ServerTimestamp val createdAt: Timestamp? = null
-)
-
-@IgnoreExtraProperties
-data class FirestoreAudioTranscription(
-    @DocumentId val id: String = "",
-    val userId: String = "",
-    val transcription: String = "",
-    val durationSeconds: Long = 0L,
-    val source: String = "microphone",
     @ServerTimestamp val createdAt: Timestamp? = null
 )
 

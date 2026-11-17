@@ -64,10 +64,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.MoodType
 import com.example.ui.components.SolaceTopBar
-import com.example.ui.theme.CreamWhite
 import com.example.ui.theme.LocalMoodColors
+import com.example.ui.theme.LocalSolaceColors
 import com.example.ui.theme.MutedBeige
-import com.example.ui.theme.PaleVanilla
+import com.example.ui.theme.SoftButter
 import com.example.ui.theme.SoftCharcoal
 import com.example.ui.theme.SubtleOutline
 import com.example.ui.theme.WarmGrey
@@ -82,6 +82,7 @@ fun CheckInScreen(
     onMoodPreview: ((String) -> Unit)? = null
 ) {
     val moodColors = LocalMoodColors.current
+    val solaceColors = LocalSolaceColors.current
 
     var selectedMood by remember { mutableStateOf(MoodType.CALM) }
     var intensityValue by remember { mutableFloatStateOf(4f) }
@@ -435,10 +436,12 @@ fun CheckInScreen(
                                 .testTag("check_in_note_input"),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = PaleVanilla,
-                                unfocusedContainerColor = PaleVanilla,
+                                focusedContainerColor = solaceColors.inputBackground,
+                                unfocusedContainerColor = solaceColors.inputBackground,
                                 focusedBorderColor = animatedPrimaryColor,
-                                unfocusedBorderColor = MutedBeige
+                                unfocusedBorderColor = solaceColors.border,
+                                focusedTextColor = solaceColors.primaryText,
+                                unfocusedTextColor = solaceColors.primaryText
                             )
                         )
 
@@ -519,9 +522,9 @@ fun CheckInScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = PaleVanilla),
+                    colors = CardDefaults.cardColors(containerColor = solaceColors.cardHighlight),
                     border = CardDefaults.outlinedCardBorder().copy(
-                        brush = Brush.verticalGradient(listOf(animatedPrimaryColor.copy(alpha = 0.3f), MutedBeige))
+                        brush = Brush.verticalGradient(listOf(solaceColors.border, solaceColors.subtleBorder))
                     )
                 ) {
                     Row(
@@ -533,7 +536,7 @@ fun CheckInScreen(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(selectedMood.bgTint)
+                                .background(selectedMood.getAdaptiveBgTint(solaceColors.isDark))
                                 .border(1.dp, animatedPrimaryColor.copy(alpha = 0.5f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -550,7 +553,7 @@ fun CheckInScreen(
                                 text = if (isHappy) "Cultivating Joy" else "Emotional Sanctuary",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = SoftCharcoal
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
@@ -560,7 +563,7 @@ fun CheckInScreen(
                                     "Feelings are visitors; they arrive, linger, and eventually pass like clouds across an open sky. You are the sky."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = SoftCharcoal.copy(alpha = 0.85f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 18.sp
                             )
                         }
@@ -656,8 +659,9 @@ private fun MoodResonanceCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val borderColor = if (selected) mood.accentColor else MutedBeige
-    val bgColor = if (selected) mood.bgTint else CreamWhite
+    val solaceColors = LocalSolaceColors.current
+    val borderColor = if (selected) mood.accentColor else solaceColors.border
+    val bgColor = if (selected) mood.getAdaptiveBgTint(solaceColors.isDark) else MaterialTheme.colorScheme.surface
 
     Card(
         modifier = modifier
@@ -738,12 +742,13 @@ private fun TagPill(
     activeColor: Color,
     onClick: () -> Unit
 ) {
+    val solaceColors = LocalSolaceColors.current
     val bgColor by animateColorAsState(
-        targetValue = if (selected) activeColor.copy(alpha = 0.2f) else PaleVanilla,
+        targetValue = if (selected) activeColor.copy(alpha = 0.25f) else solaceColors.inputBackground,
         animationSpec = tween(200),
         label = "tagBg"
     )
-    val borderColor = if (selected) activeColor else MutedBeige
+    val borderColor = if (selected) activeColor else solaceColors.border
 
     Box(
         modifier = Modifier
@@ -770,7 +775,7 @@ private fun TagPill(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) SoftCharcoal else SoftCharcoal.copy(alpha = 0.85f)
+                color = if (selected) solaceColors.primaryText else solaceColors.secondaryText
             )
         }
     }

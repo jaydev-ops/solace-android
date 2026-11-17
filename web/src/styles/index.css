@@ -1,0 +1,470 @@
+@import './theme.css';
+
+/* ==========================================================================
+   Base & Resets - Pixel-Perfect Android & Apple HIG Solace+ Mirror
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  font-family: var(--font-body);
+  background-color: var(--solace-bg);
+  color: var(--solace-primary-text);
+  line-height: 1.5;
+  font-size: 16px;
+  accent-color: var(--active-mood-primary);
+  scrollbar-color: var(--solace-border) transparent;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background-color: var(--solace-bg);
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--active-mood-primary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: var(--solace-accent);
+  color: var(--solace-on-accent);
+}
+
+/* ==========================================================================
+   Typography Scale (Native Solace+ Android Type.kt Tokens)
+   ========================================================================== */
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  color: var(--solace-primary-text);
+}
+
+/* Ambient Canvas Background (matches AmbientSanctuaryCanvas in SolaceComponents.kt) */
+.ambient-sanctuary-canvas {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  background: linear-gradient(180deg, var(--active-mood-glow) 0%, var(--active-mood-highlight) 35%, var(--solace-bg) 100%);
+  transition: background 0.5s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+:root[data-theme="dark"] .ambient-sanctuary-canvas {
+  background: linear-gradient(180deg, var(--active-mood-glow) 0%, var(--solace-bg-secondary) 35%, var(--solace-bg) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .ambient-sanctuary-canvas {
+    background: linear-gradient(180deg, var(--active-mood-glow) 0%, var(--solace-bg-secondary) 35%, var(--solace-bg) 100%);
+  }
+}
+
+/* ==========================================================================
+   Solace Top Bar (matches SolaceTopBar in SolaceComponents.kt)
+   ========================================================================== */
+.solace-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.solace-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.solace-wordmark-text {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--solace-primary-text);
+}
+
+.solace-plus-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--solace-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--solace-on-accent);
+  line-height: 1;
+}
+
+.solace-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--solace-accent-soft);
+  border: 1.5px solid var(--solace-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--solace-on-accent);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.solace-avatar:hover {
+  transform: scale(1.05);
+}
+
+/* ==========================================================================
+   Solace Bottom Navigation (matches SolaceBottomNav in SolaceComponents.kt)
+   ========================================================================== */
+.solace-bottom-nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(255, 252, 245, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--solace-border);
+  box-shadow: 0 -4px 16px rgba(48, 49, 45, 0.05);
+  z-index: 100;
+}
+
+:root[data-theme="dark"] .solace-bottom-nav-bar {
+  background-color: rgba(32, 31, 27, 0.96);
+  border-top-color: var(--solace-border);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.solace-bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 6px 12px env(safe-area-inset-bottom, 8px);
+}
+
+.solace-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  color: var(--solace-secondary-text);
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 58px;
+}
+
+.solace-nav-btn:hover {
+  color: var(--solace-primary-text);
+}
+
+.solace-nav-btn.active {
+  color: var(--active-mood-primary);
+  font-weight: 700;
+}
+
+/* Center Prominent Solace AI Navigation Capsule */
+.solace-ai-nav-capsule {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background-color: var(--solace-input-bg);
+  border: 1px solid var(--solace-border);
+  color: var(--solace-primary-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.solace-ai-nav-capsule.active {
+  background-color: var(--solace-accent);
+  border-color: transparent;
+  color: var(--solace-on-accent);
+  box-shadow: 0 2px 10px rgba(245, 217, 130, 0.4);
+}
+
+.solace-ai-nav-capsule span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Native Solace Cards (24dp rounded, surface elevation)
+   ========================================================================== */
+.solace-card {
+  background-color: var(--solace-card-bg);
+  border: 1px solid var(--solace-border);
+  border-radius: 24px;
+  box-shadow: var(--solace-card-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.solace-card.interactive {
+  cursor: pointer;
+}
+
+.solace-card.interactive:hover {
+  box-shadow: var(--solace-card-shadow-hover);
+  border-color: var(--solace-border-subtle);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Native Quick Mood Chips (2x3 Grid in Intention Check)
+   ========================================================================== */
+.quick-mood-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.quick-mood-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px;
+  border-radius: 16px;
+  background-color: var(--solace-card-bg);
+  border: 1.5px solid var(--solace-border);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quick-mood-chip.selected {
+  border-color: var(--chip-accent);
+  background-color: var(--chip-bg);
+  transform: scale(1.02);
+}
+
+.quick-mood-chip-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.quick-mood-chip-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--solace-primary-text);
+}
+
+/* 54dp Primary Buttons */
+.btn-primary-54 {
+  width: 100%;
+  height: 54px;
+  border-radius: 20px;
+  background-color: var(--active-mood-primary);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px var(--active-mood-glow);
+}
+
+.btn-primary-54:hover {
+  filter: brightness(1.05);
+}
+
+/* 52dp Accent Button */
+.btn-accent-52 {
+  width: 100%;
+  height: 52px;
+  border-radius: 20px;
+  background-color: var(--solace-accent);
+  color: var(--solace-on-accent);
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-accent-52:hover {
+  filter: brightness(1.04);
+}
+
+/* Input Fields */
+.input-field {
+  width: 100%;
+  background-color: var(--solace-input-bg);
+  border: 1px solid var(--solace-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: var(--solace-primary-text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: var(--active-mood-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--active-mood-glow);
+}
+
+/* Modal Dialogs */
+dialog:modal {
+  overscroll-behavior: contain;
+  border: 1px solid var(--solace-border);
+  border-radius: 24px;
+  background-color: var(--solace-card-bg);
+  color: var(--solace-primary-text);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.35);
+  padding: 0;
+  max-width: min(92vw, 520px);
+  width: 100%;
+  margin: auto;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(23, 23, 20, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Breathing Aura Visualizer */
+.breathing-aura-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 240px;
+  height: 240px;
+  margin: 24px auto;
+}
+
+.breathing-ring-outer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--active-mood-glow) 0%, transparent 70%);
+  transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.breathing-orb-inner {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--active-mood-primary) 0%, var(--solace-accent) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #171714;
+  font-weight: 600;
+  box-shadow: 0 0 45px var(--active-mood-glow);
+  transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  z-index: 2;
+  text-align: center;
+  padding: 16px;
+}
+
+.breath-phase-inhale .breathing-ring-outer,
+.breath-phase-inhale .breathing-orb-inner {
+  transform: scale(1.35);
+}
+
+.breath-phase-hold .breathing-ring-outer,
+.breath-phase-hold .breathing-orb-inner {
+  transform: scale(1.35);
+  box-shadow: 0 0 65px var(--active-mood-glow);
+}
+
+.breath-phase-exhale .breathing-ring-outer,
+.breath-phase-exhale .breathing-orb-inner {
+  transform: scale(0.85);
+}
+
+.breath-phase-rest .breathing-ring-outer,
+.breath-phase-rest .breathing-orb-inner {
+  transform: scale(0.85);
+}
+
+/* Message Bubbles */
+.message-bubble {
+  max-width: 82%;
+  padding: 14px 18px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  position: relative;
+  word-break: break-word;
+}
+
+.message-bubble.assistant {
+  background-color: var(--solace-card-bg);
+  border: 1px solid var(--solace-border);
+  color: var(--solace-primary-text);
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.message-bubble.user {
+  background-color: var(--solace-surface-raised);
+  border: 1px solid var(--solace-border-subtle);
+  color: var(--solace-primary-text);
+  border-bottom-right-radius: 6px;
+  margin-left: auto;
+}
