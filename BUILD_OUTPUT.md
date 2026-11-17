@@ -19,7 +19,7 @@
 | **Main Activity** | `com.example.MainActivity` |
 | **Gradle / AGP Version** | Gradle 8.13 / AGP 8.9.1 / Kotlin 2.1.10 |
 | **Build Status** | ✅ **BUILD SUCCESSFUL** |
-| **Build Date & Time** | 2026-11-18 00:03:00 IST |
+| **Build Date & Time** | 2026-11-18 00:56:00 IST |
 
 ---
 
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | **Test APK (Outputs Folder)** | [`outputs/Solace-debug.apk`](file:///Users/jayeshyadav/Projects/Solace--main/outputs/Solace-debug.apk) | **30.8 MB** (32,259,796 bytes) | `989a46be774423078248abdbb207ebe6d10fe26727161658e5ec442cbb7e15b0` |
 | **Gradle Default APK** | [`app/build/outputs/apk/debug/app-debug.apk`](file:///Users/jayeshyadav/Projects/Solace--main/app/build/outputs/apk/debug/app-debug.apk) | **30.8 MB** (32,259,796 bytes) | `989a46be774423078248abdbb207ebe6d10fe26727161658e5ec442cbb7e15b0` |
-| **Web Production Bundle** | [`web/dist/index.html`](file:///Users/jayeshyadav/Projects/Solace--main/web/dist/index.html) | **483.3 KB JS / 17.3 KB CSS** | Built via Vite v8.3.8 & TypeScript |
+| **Web Production Bundle** | [`web/dist/index.html`](file:///Users/jayeshyadav/Projects/Solace--main/web/dist/index.html) | **496.2 KB JS / 17.3 KB CSS** | Built via Vite v8.3.8 & TypeScript |
 
 ---
 
@@ -43,7 +43,27 @@
   - `Batch4ScenariosTest.kt`: 25 tests passing (Scenarios 16–20).
   - `DeterministicEmotionalEngineTest.kt`: 77 tests passing (Crisis screening, de-escalation, deduplication, 4-turn multi-turn flows, false-positive safety).
   - `HybridSafetySystemTest.kt`: 51 tests passing (Clinical escalation, risk levels 1–4, Indian and global crisis helplines).
-- **Web Engine Tests (`npm test` in `web/`)**: **156+ assertions passing, 0 errors** (`engineValidation.ts` + `batch1Validation.ts` + `batch2Validation.ts` + `batch3Validation.ts` + `batch4Validation.ts`).
+- **Web Engine Tests (`npm test` in `web/`)**: **161+ assertions passing, 0 errors** (`engineValidation.ts` + `batch1Validation.ts` + `batch2Validation.ts` + `batch3Validation.ts` + `batch4Validation.ts` + `authAndHistoryValidation.ts`).
+
+---
+
+## 4. History of Changes
+
+### Build 1.7 (2026-11-18 00:56:00 IST) — Web Login & User-Scoped Chat History + Keyboard Inset Diagnostics
+- **Web Sanctuary Login Page**:
+  - Implemented `LoginScreen.tsx` which prompts users for their name before entering the app.
+  - Added returning user chips (`solace_known_users`) for 1-click login.
+  - Fully isolated per-user chat histories (`solace_chat_history_<username>`).
+  - Added chat transcript export (markdown download), message count badge, and timestamp display.
+- **Android Keyboard Inset Double-Padding Resolution**:
+  - Pinned `android:windowSoftInputMode="adjustNothing"` in `AndroidManifest.xml` so Android's window manager does not pan or resize the decor view while Compose's `Modifier.imePadding()` simultaneously shifts the composer bar.
+  - This eliminates the double-inset bug (the grey block gap between input field and keyboard).
+- **"i m. good" Crisis Screening False Positive Diagnostics**:
+  - Confirmed the user's screenshot was captured at 21:38 (9:38 PM) using a previous build.
+  - Build 1.7 includes full normalization so `"i m. good"`, `"im good"`, `"good"`, `"fine"`, etc. de-escalate cleanly to `LEVEL_0_NORMAL` without triggering suicidal crisis screening.
+- **GitHub Commit & Push**:
+  - Commit `8ec66fe` pushed to branch `main`.
+
 
 ### 3.2 Real Device / Emulator Live Verification (`emulator-5554`)
 1. **Installation**:
